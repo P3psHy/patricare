@@ -13,7 +13,7 @@ export class Documents {
     @Column({ length: 50 })
     type: string;
 
-    @Column({ type: 'datetime' })
+    @Column({ type: 'timestamp' })
     dateModification: Date;
 
     @ManyToOne(() => User, user => user.documents)

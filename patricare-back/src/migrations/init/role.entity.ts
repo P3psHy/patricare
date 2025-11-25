@@ -1,5 +1,5 @@
-import { Column, Entity, OneToMany } from "typeorm/browser";
-import { PrimaryGeneratedColumn } from "typeorm/browser";
+import { Column, Entity, OneToMany } from "typeorm";
+import { PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
 
 @Entity()

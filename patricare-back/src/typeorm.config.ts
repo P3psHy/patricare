@@ -10,7 +10,8 @@ const AppDataSource = new DataSource({
     password: databaseConfig.password,
     database: databaseConfig.database,
     entities: [path.join(__dirname, '/**/*.entity{.ts,.js}')],
-    migrations: [path.join(__dirname, '/migrations/**/*{.ts,.js}')],
+    migrations: [path.join(__dirname, '/migrations/*-*.ts'), path.join(__dirname, '/migrations/*-*.js')],
+    migrationsTableName: undefined,
     synchronize: false,
 });
 

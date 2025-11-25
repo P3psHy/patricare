@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "migration:generate": "cross-env NODE_OPTIONS=--conditions=node ts-node src/scripts/create-database.ts && cross-env NODE_OPTIONS=--conditions=node node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/migrations/init -d src/typeorm.config.ts",
+    "migration:clean": "ts-node src/scripts/clean-database.ts",
     "migration:run": "ts-node src/scripts/create-database.ts && ts-node src/scripts/run-migrations.ts",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
