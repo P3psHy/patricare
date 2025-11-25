@@ -46,11 +46,6 @@ const Sidenav = () => {
           label="Locataires"
           isActive={router === '/locataires'}
         />
-        <SidenavItem
-          href="/planification"
-          label="Planification"
-          isActive={router === '/planification'}
-        />
       </nav>
 
       {/* Menu Bas (Paramètres et Déconnexion) */}
