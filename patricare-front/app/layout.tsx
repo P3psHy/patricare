@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Link from "next/link";
+import Sidenav from "./components/sidenav/Sidenav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +29,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="container flex gap-1">
+          <div className="sidenav">
+            <Sidenav />
+          </div>
+          <div>
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );
