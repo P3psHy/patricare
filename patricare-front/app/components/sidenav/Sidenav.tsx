@@ -4,6 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import SidenavItem from './SidenavItem';
+import Image from 'next/image';
+import Logo from '../../assets/logo.png';
 
 const Sidenav = () => {
   const router = usePathname();
@@ -13,9 +15,8 @@ const Sidenav = () => {
       {/* En-tête / Logo */}
       <div className="p-6 border-b border-gray-100">
         <Link href="/" className="flex items-center space-x-3">
-          {/* Remplacez par votre logo */}
           <div className="p-2 bg-blue-100 rounded-full">
-            <span className="h-6 w-6 text-blue-600">Logo</span>
+            <Image src={Logo} alt="PatriCare Logo" width={64} height={64} />
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-tight">PatriCare</h1>
