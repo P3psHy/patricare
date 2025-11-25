@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "typeorm";
-import { Adresse } from "./adresse.entity";
-import { User } from "./user.entity";
+import { Adresse } from "../../modules/address/entities/adresse.entity";
+import { User } from "../../modules/user/user.entity";
 
 @Entity()
 export class Logement {

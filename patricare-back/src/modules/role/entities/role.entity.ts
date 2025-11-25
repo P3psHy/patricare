@@ -1,6 +1,6 @@
 import { Column, Entity, OneToMany } from "typeorm/browser";
 import { PrimaryGeneratedColumn } from "typeorm/browser";
-import { User } from "./user.entity";
+import { User } from "../../modules/user/user.entity";
 
 @Entity()
 export class Role {

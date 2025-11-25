@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
-import { Logement } from "./logement.entity";
-import { Role } from "./role.entity";
+import { Logement } from "../../migrations/init/logement.entity";
+import { Role } from "../../migrations/init/role.entity";
 import { Documents } from "./document.entity";
 
 @Entity()
