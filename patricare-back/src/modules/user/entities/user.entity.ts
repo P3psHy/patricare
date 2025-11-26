@@ -22,4 +22,5 @@ export class User {
 
     @OneToMany(() => Documents, doc => doc.user)
     documents: Document[];
+  rentedLogements: any;
 }
