@@ -2,13 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import SidenavItem from './SidenavItem';
 import Image from 'next/image';
 import Logo from '../../assets/logo.png';
 
 const Sidenav = () => {
-  const router = usePathname();
+  const routerPath = usePathname();
+  const router = useRouter();
 
   return (
     <div className="flex flex-col h-screen w-64 bg-white border-r border-gray-200 text-gray-700">
@@ -30,22 +31,22 @@ const Sidenav = () => {
         <SidenavItem
           href="/dashboard"
           label="Tableau de bord"
-          isActive={router === '/dashboard' || router === '/'}
+          isActive={routerPath === '/dashboard' || routerPath === '/'}
         />
         <SidenavItem
           href="/mes-biens"
           label="Mes biens"
-          isActive={router === '/mes-biens'}
+          isActive={routerPath === '/mes-biens'}
         />
         <SidenavItem
           href="/documents"
           label="Documents"
-          isActive={router === '/documents'}
+          isActive={routerPath === '/documents'}
         />
         <SidenavItem
           href="/locataires"
           label="Locataires"
-          isActive={router === '/locataires'}
+          isActive={routerPath === '/locataires'}
         />
       </nav>
 
@@ -54,11 +55,11 @@ const Sidenav = () => {
         <SidenavItem
           href="/parametres"
           label="Paramètres"
-          isActive={router === '/parametres'}
+          isActive={routerPath === '/parametres'}
         />
         <button
           className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-          onClick={() => { /* Logique de déconnexion */ console.log('Déconnexion'); }}
+          onClick={() => { router.replace("/login"); }}
         >
           Déconnexion
         </button>
