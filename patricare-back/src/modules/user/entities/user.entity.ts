@@ -3,7 +3,7 @@ import { Logement } from "../../migrations/init/logement.entity";
 import { Role } from "../../migrations/init/role.entity";
 import { Documents } from "./document.entity";
 
-@Entity()
+@Entity('users')
 export class User {
     @PrimaryGeneratedColumn()
     id: number;

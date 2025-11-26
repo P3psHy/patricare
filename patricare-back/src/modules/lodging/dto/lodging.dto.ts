@@ -9,9 +9,4 @@ export class LodgingDto {
   // Relation avec Adresse
   adresseId: number;
 
-  // Relation User <-> Logement via Loger
-  users: {
-    userId: number;
-    statut: string;
-  }[];
 }

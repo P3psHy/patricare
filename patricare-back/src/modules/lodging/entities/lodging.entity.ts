@@ -7,7 +7,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Adresse } from '../../address/entities/adresse.entity';
-import { Loger } from '../../loger/entities/loger.entity';
 
 @Entity('logements')
 export class Lodging {
@@ -33,7 +32,4 @@ export class Lodging {
   @JoinColumn({ name: 'adresseId' })
   adresse!: Adresse;
 
-  // Relation User <-> Logement via Loger (statut)
-  @OneToMany(() => Loger, (loger) => loger.logement)
-  logers!: Loger[];
 }

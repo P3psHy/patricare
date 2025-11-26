@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany } from "typeorm/browser";
 import { PrimaryGeneratedColumn } from "typeorm/browser";
 import { User } from "../../modules/user/user.entity";
 
-@Entity()
+@Entity('roles')
 export class Role {
     @PrimaryGeneratedColumn('increment')
     id: number;

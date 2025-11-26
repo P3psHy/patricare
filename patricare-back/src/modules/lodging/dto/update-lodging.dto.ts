@@ -5,4 +5,5 @@ export class UpdateLodgingDto {
   @IsOptional() @IsNumber() prixLoyer?: number;
   @IsOptional() @IsNumber() superficie?: number;
   @IsOptional() @IsNumber() nbPiece?: number;
+  @IsOptional() @IsNumber() adresseId?: number;
 }

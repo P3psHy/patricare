@@ -1,94 +1,76 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-
 import { Lodging } from './entities/lodging.entity';
+import { Adresse } from '../address/entities/adresse.entity';
 import { CreateLodgingDto } from './dto/create-lodging.dto';
 import { UpdateLodgingDto } from './dto/update-lodging.dto';
-import { LodgingDto } from './dto/lodging.dto';
-import { Adresse } from '../address/entities/adresse.entity';
+import { ILodgingService, LodgingFilter } from './lodging-service.interface';
 
 @Injectable()
-export class LodgingService {
+export class LodgingService implements ILodgingService {
   constructor(
-    @InjectRepository(Lodging)
-    private readonly lodgingRepository: Repository<Lodging>,
+    @InjectRepository(Lodging) private readonly lodgingRepo: Repository<Lodging>,
+    @InjectRepository(Adresse) private readonly adresseRepo: Repository<Adresse>,
   ) {}
 
-  async findAll(): Promise<LodgingDto[]> {
-    const entities = await this.lodgingRepository.find({
-      relations: ['adresse', 'logers', 'logers.user'],
-    });
-
-    return entities.map((entity) => this.toDTO(entity));
+  async create(dto: CreateLodgingDto): Promise<Lodging> {
+    const adresse = await this.adresseRepo.findOne({ where: { id: dto.adresseId } });
+    if (!adresse) throw new NotFoundException('Adresse introuvable');
+    const lodging = this.lodgingRepo.create({ ...dto, adresse });
+    return this.lodgingRepo.save(lodging);
   }
 
-  async findById(id: number): Promise<LodgingDto> {
-    const entity = await this.lodgingRepository.findOne({
-      where: { id },
-      relations: ['adresse', 'logers', 'logers.user'],
-    });
+  async findAll(filter?: LodgingFilter): Promise<Lodging[]> {
+    const qb = this.lodgingRepo.createQueryBuilder('l').leftJoinAndSelect('l.adresse', 'adresse');
 
-    if (!entity) {
-      throw new NotFoundException(`Logement avec l'id ${id} non trouvé`);
-    }
+    if (filter?.estLoue !== undefined) qb.andWhere('l.estLoue = :estLoue', { estLoue: filter.estLoue });
+    if (filter?.minPrice !== undefined) qb.andWhere('l.prixLoyer >= :minPrice', { minPrice: filter.minPrice });
+    if (filter?.maxPrice !== undefined) qb.andWhere('l.prixLoyer <= :maxPrice', { maxPrice: filter.maxPrice });
+    if (filter?.minSurface !== undefined) qb.andWhere('l.superficie >= :minSurface', { minSurface: filter.minSurface });
+    if (filter?.maxSurface !== undefined) qb.andWhere('l.superficie <= :maxSurface', { maxSurface: filter.maxSurface });
+    if (filter?.minNbPiece !== undefined) qb.andWhere('l.nbPiece >= :minNb', { minNb: filter.minNbPiece });
+    if (filter?.maxNbPiece !== undefined) qb.andWhere('l.nbPiece <= :maxNb', { maxNb: filter.maxNbPiece });
+    if (filter?.adresseId !== undefined) qb.andWhere('adresse.id = :adresseId', { adresseId: filter.adresseId });
 
-    return this.toDTO(entity);
+    if (filter?.limit) qb.take(filter.limit);
+    if (filter?.offset) qb.skip(filter.offset);
+
+    return qb.getMany();
   }
 
-  async create(dto: CreateLodgingDto): Promise<LodgingDto> {
-    const entity = this.lodgingRepository.create({
-      estLoue: dto.estLoue,
-      prixLoyer: dto.prixLoyer,
-      superficie: dto.superficie,
-      nbPiece: dto.nbPiece,
-      adresse: { id: dto.adresseId } as Adresse,
-    });
-
-    const saved = await this.lodgingRepository.save(entity);
-    return this.toDTO(saved);
+  async findOne(id: number): Promise<Lodging | null> {
+    const lodging = await this.lodgingRepo.findOne({ where: { id }, relations: ['adresse'] });
+    if (!lodging) throw new NotFoundException('Logement introuvable');
+    return lodging;
   }
 
-  async update(id: number, dto: UpdateLodgingDto): Promise<LodgingDto> {
-    const entity = await this.lodgingRepository.findOne({ where: { id } });
-
-    if (!entity) {
-      throw new NotFoundException(`Logement avec l'id ${id} non trouvé`);
-    }
-
-    entity.estLoue = dto.estLoue ?? entity.estLoue;
-    entity.prixLoyer = dto.prixLoyer ?? entity.prixLoyer;
-    entity.superficie = dto.superficie ?? entity.superficie;
-    entity.nbPiece = dto.nbPiece ?? entity.nbPiece;
+  async update(id: number, dto: UpdateLodgingDto): Promise<Lodging> {
+    const lodging = await this.lodgingRepo.findOne({ where: { id }, relations: ['adresse'] });
+    if (!lodging) throw new NotFoundException('Logement introuvable');
 
     if (dto.adresseId) {
-      entity.adresse = { id: dto.adresseId } as Adresse;
+      const adresse = await this.adresseRepo.findOne({ where: { id: dto.adresseId } });
+      if (!adresse) throw new NotFoundException('Adresse introuvable');
+      lodging.adresse = adresse;
     }
-
-    const updated = await this.lodgingRepository.save(entity);
-    return this.toDTO(updated);
+    Object.assign(lodging, dto);
+    return this.lodgingRepo.save(lodging);
   }
 
-  async delete(id: number): Promise<void> {
-    const result = await this.lodgingRepository.delete(id);
-
-    if (result.affected === 0) {
-      throw new NotFoundException(`Logement avec l'id ${id} non trouvé`);
-    }
+  async remove(id: number): Promise<void> {
+    const res = await this.lodgingRepo.delete(id);
+    if (res.affected === 0) throw new NotFoundException('Logement introuvable');
   }
 
-  private toDTO(entity: Lodging): LodgingDto {
-    return {
-      id: entity.id,
-      estLoue: entity.estLoue,
-      prixLoyer: entity.prixLoyer,
-      superficie: entity.superficie,
-      nbPiece: entity.nbPiece,
-      adresseId: entity.adresse?.id,
-      users: entity.logers?.map((loger) => ({
-        userId: loger.user.id,
-        statut: loger.statut,
-      })) ?? [],
-    };
+  async setRentStatus(id: number, estLoue: boolean): Promise<Lodging> {
+    const lodging = await this.lodgingRepo.findOne({ where: { id } });
+    if (!lodging) throw new NotFoundException('Logement introuvable');
+    lodging.estLoue = estLoue;
+    return this.lodgingRepo.save(lodging);
+  }
+
+  async findByAddressId(adresseId: number): Promise<Lodging[]> {
+    return this.lodgingRepo.find({ where: { adresse: { id: adresseId } }, relations: ['adresse'] });
   }
 }

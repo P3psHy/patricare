@@ -5,4 +5,5 @@ export class CreateLodgingDto {
   @IsNumber() prixLoyer: number;
   @IsNumber() superficie: number;
   @IsNumber() nbPiece: number;
+  @IsNumber() adresseId: number;
 }
