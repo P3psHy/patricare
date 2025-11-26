@@ -7,4 +7,4 @@ import { LodgingService } from './lodging.service';
   providers: [LodgingService],
   exports: [LodgingService],
 })
-export class LodgingModule { }
+export class LodgingModule {}

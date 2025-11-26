@@ -1,10 +1,10 @@
 export class Role {
-    id?: number;
-    libelle: string;
+  id?: number;
+  libelle: string;
 
-    constructor(data?: Partial<Role>) {
-        if (data) {
-            Object.assign(this, data);
-        }
+  constructor(data?: Partial<Role>) {
+    if (data) {
+      Object.assign(this, data);
     }
+  }
 }

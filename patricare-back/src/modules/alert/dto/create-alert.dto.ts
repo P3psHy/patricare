@@ -1,6 +1,6 @@
 import { IsString, IsOptional } from 'class-validator';
 
-export class CreateAlerteDto {
+export class CreateAlertDto {
   @IsString() titre: string;
   @IsString() commentaire: string;
 

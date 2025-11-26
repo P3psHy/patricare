@@ -3,8 +3,8 @@ import { DocumentService } from './document.service';
 import { DocumentController } from './document.controller';
 
 @Module({
-    controllers: [DocumentController],
-    providers: [DocumentService],
-    exports: [DocumentService],
+  controllers: [DocumentController],
+  providers: [DocumentService],
+  exports: [DocumentService],
 })
-export class DocumentModule { }
+export class DocumentModule {}

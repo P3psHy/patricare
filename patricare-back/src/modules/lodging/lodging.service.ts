@@ -17,7 +17,7 @@ export class LodgingService {
       superficie: 65,
       nbPiece: 2,
       adresseId: 1,
-      description: 'Bel appartement avec vue sur la Seine'
+      description: 'Bel appartement avec vue sur la Seine',
     });
     this.create({
       estLoue: false,
@@ -25,7 +25,7 @@ export class LodgingService {
       superficie: 120,
       nbPiece: 4,
       adresseId: 2,
-      description: 'Spacieux T4 au cœur de Paris'
+      description: 'Spacieux T4 au cœur de Paris',
     });
     this.create({
       estLoue: true,
@@ -33,7 +33,7 @@ export class LodgingService {
       superficie: 35,
       nbPiece: 1,
       adresseId: 3,
-      description: 'Studio cosy proche du métro'
+      description: 'Studio cosy proche du métro',
     });
   }
 

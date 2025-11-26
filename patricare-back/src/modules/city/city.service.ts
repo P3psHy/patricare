@@ -1,48 +1,71 @@
 import { Injectable } from '@nestjs/common';
-import { Ville } from './entities/ville.entity';
+import { City } from './entities/city.entity';
 
 @Injectable()
 export class CityService {
-    private cities = new Map<number, Ville>();
-    private idCounter = 1;
+  private cities = new Map<number, City>();
+  private idCounter = 1;
 
-    constructor() {
-        this.initializeCities();
-    }
+  constructor() {
+    this.initializeCities();
+  }
 
-    private initializeCities(): void {
-        this.create({ nom: 'Paris', codePostal: '75001', departement: '75', region: 'Île-de-France' });
-        this.create({ nom: 'Lyon', codePostal: '69001', departement: '69', region: 'Auvergne-Rhône-Alpes' });
-        this.create({ nom: 'Marseille', codePostal: '13001', departement: '13', region: 'Provence-Alpes-Côte d\'Azur' });
-        this.create({ nom: 'Toulouse', codePostal: '31000', departement: '31', region: 'Occitanie' });
-    }
+  private initializeCities(): void {
+    this.create({
+      nom: 'Paris',
+      codePostal: '75001',
+      departement: '75',
+      region: 'Île-de-France',
+    });
 
-    create(cityData: Partial<Ville>): Ville {
-        const city = new Ville(cityData);
-        city.id = this.idCounter++;
-        this.cities.set(city.id, city);
-        return city;
-    }
+    this.create({
+      nom: 'Lyon',
+      codePostal: '69001',
+      departement: '69',
+      region: 'Auvergne-Rhône-Alpes',
+    });
 
-    findAll(): Ville[] {
-        return Array.from(this.cities.values());
-    }
+    this.create({
+      nom: 'Marseille',
+      codePostal: '13001',
+      departement: '13',
+      region: "Provence-Alpes-Côte d'Azur",
+    });
 
-    findOne(id: number): Ville | undefined {
-        return this.cities.get(id);
-    }
+    this.create({
+      nom: 'Toulouse',
+      codePostal: '31000',
+      departement: '31',
+      region: 'Occitanie',
+    });
+  }
 
-    update(id: number, cityData: Partial<Ville>): Ville | undefined {
-        const city = this.cities.get(id);
-        if (city) {
-            Object.assign(city, cityData);
-            this.cities.set(id, city);
-            return city;
-        }
-        return undefined;
-    }
+  create(cityData: Partial<City>): City {
+    const city = new City(cityData);
+    city.id = this.idCounter++;
+    this.cities.set(city.id, city);
+    return city;
+  }
 
-    delete(id: number): boolean {
-        return this.cities.delete(id);
+  findAll(): City[] {
+    return Array.from(this.cities.values());
+  }
+
+  findOne(id: number): City | undefined {
+    return this.cities.get(id);
+  }
+
+  update(id: number, cityData: Partial<City>): City | undefined {
+    const city = this.cities.get(id);
+    if (city) {
+      Object.assign(city, cityData);
+      this.cities.set(id, city);
+      return city;
     }
+    return undefined;
+  }
+
+  delete(id: number): boolean {
+    return this.cities.delete(id);
+  }
 }

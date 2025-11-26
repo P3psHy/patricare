@@ -3,7 +3,7 @@ export class AddressDto {
   id: number;
   rue: string;
 
-  // Relation Ville <-> Adresse via Associer
+  // Relation Ville <-> Address via Associer
   city: {
     id: number;
     nom: string;

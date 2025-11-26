@@ -1,48 +1,70 @@
 import { Injectable } from '@nestjs/common';
-import { Adresse } from './entities/adresse.entity';
+import { Address } from './entities/adresse.entity';
 
 @Injectable()
 export class AddressService {
-    private addresses = new Map<number, Adresse>();
-    private idCounter = 1;
+  private readonly addresses = new Map<number, Address>();
+  private idCounter = 1;
 
-    constructor() {
-        this.initializeAddresses();
-    }
+  constructor() {
+    this.initializeAddresses();
+  }
 
-    private initializeAddresses(): void {
-        this.create({ numero: '123', rue: 'Rue de la Paix', complement: 'Apt 5', villeId: 1 });
-        this.create({ numero: '456', rue: 'Avenue des Champs', complement: '', villeId: 1 });
-        this.create({ numero: '789', rue: 'Boulevard Saint-Germain', complement: 'Suite 200', villeId: 1 });
-        this.create({ numero: '101', rue: 'Rue de la République', complement: '', villeId: 2 });
-    }
+  private initializeAddresses(): void {
+    this.create({
+      numero: '123',
+      rue: 'Rue de la Paix',
+      complement: 'Apt 5',
+      villeId: 1,
+    });
 
-    create(addressData: Partial<Adresse>): Adresse {
-        const address = new Adresse(addressData);
-        address.id = this.idCounter++;
-        this.addresses.set(address.id, address);
-        return address;
-    }
+    this.create({
+      numero: '456',
+      rue: 'Avenue des Champs',
+      complement: '',
+      villeId: 1,
+    });
 
-    findAll(): Adresse[] {
-        return Array.from(this.addresses.values());
-    }
+    this.create({
+      numero: '789',
+      rue: 'Boulevard Saint-Germain',
+      complement: 'Suite 200',
+      villeId: 1,
+    });
 
-    findOne(id: number): Adresse | undefined {
-        return this.addresses.get(id);
-    }
+    this.create({
+      numero: '101',
+      rue: 'Rue de la République',
+      complement: '',
+      villeId: 2,
+    });
+  }
 
-    update(id: number, addressData: Partial<Adresse>): Adresse | undefined {
-        const address = this.addresses.get(id);
-        if (address) {
-            Object.assign(address, addressData);
-            this.addresses.set(id, address);
-            return address;
-        }
-        return undefined;
-    }
+  create(addressData: Partial<Address>): Address {
+    const address = new Address(addressData);
+    address.id = this.idCounter++;
+    this.addresses.set(address.id, address);
+    return address;
+  }
 
-    delete(id: number): boolean {
-        return this.addresses.delete(id);
-    }
+  findAll(): Address[] {
+    return [...this.addresses.values()];
+  }
+
+  findOne(id: number): Address | undefined {
+    return this.addresses.get(id);
+  }
+
+  update(id: number, addressData: Partial<Address>): Address | undefined {
+    const address = this.addresses.get(id);
+    if (!address) return undefined;
+
+    Object.assign(address, addressData);
+    this.addresses.set(id, address);
+    return address;
+  }
+
+  delete(id: number): boolean {
+    return this.addresses.delete(id);
+  }
 }

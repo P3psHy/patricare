@@ -1,10 +1,18 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { LodgingService } from './lodging.service';
 import { CreateLodgingDto } from './dto/create-lodging.dto';
 
 @Controller('lodgings')
 export class LodgingController {
-  constructor(private readonly lodgingService: LodgingService) { }
+  constructor(private readonly lodgingService: LodgingService) {}
 
   @Post()
   create(@Body() createLodgingDto: CreateLodgingDto) {
