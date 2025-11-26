@@ -89,12 +89,19 @@ export default function DocumentsPage() {
     load();
   }, []);
 
-  const filteredDocuments = documents.filter(
-    (doc) =>
-      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.folder.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizedSearch = (searchTerm ?? "").toUpperCase();
+
+  const filteredDocuments = documents.filter((doc) => {
+    const name = (doc.name ?? "").toUpperCase();
+    const property = (doc.property ?? "").toUpperCase();
+    const folder = (doc.folder ?? "").toUpperCase();
+
+    return (
+      name.includes(normalizedSearch) ||
+      property.includes(normalizedSearch) ||
+      folder.includes(normalizedSearch)
+    );
+  });
 
   const selectedFolderName = selectedFolder
     ? folders.find((f) => f.id === selectedFolder)?.name
