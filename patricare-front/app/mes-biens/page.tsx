@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Plus,
   Search,
@@ -12,11 +13,24 @@ import {
   Eye,
 } from 'lucide-react';
 
+interface Property {
+  id: number;
+  name: string;
+  type: string;
+  address: string;
+  size: string;
+  rooms: string;
+  rent: string;
+  tenant: string | null;
+  status: string;
+  image: string;
+}
+
 export default function MesBiensPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-
-  const properties = [
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [properties, setProperties] = useState<Property[]>([
     {
       id: 1,
       name: 'Appartement Paris 15ème',
@@ -89,13 +103,41 @@ export default function MesBiensPage() {
       status: 'Loué',
       image: 'parking',
     },
-  ];
+  ]);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [formData, setFormData] = useState<Property | null>(null);
 
   const filteredProperties = properties.filter((property) =>
     property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
     property.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleEditClick = (property: Property) => {
+    setEditingProperty(property);
+    setFormData({ ...property });
+    setShowEditModal(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (formData) {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
+  };
+
+  const handleSave = () => {
+    if (formData && editingProperty) {
+      setProperties(properties.map(p => p.id === editingProperty.id ? formData : p));
+      setShowEditModal(false);
+      setEditingProperty(null);
+      setFormData(null);
+      alert('Bien modifié avec succès');
+    }
+  };
 
   return (
     <div className="flex">
@@ -170,7 +212,6 @@ export default function MesBiensPage() {
                 </div>
               </div>
 
-              {/* Content */}
               <div className="p-5">
                 <div className="mb-3">
                   <h3 className="text-gray-900 mb-1">{property.name}</h3>
@@ -200,13 +241,18 @@ export default function MesBiensPage() {
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex gap-2 pt-4 border-t border-gray-100">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                  <Link
+                    href={`/mes-biens/${property.id}`}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  >
                     <Eye className="w-4 h-4" />
                     Voir
-                  </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition">
+                  </Link>
+                  <button
+                    onClick={() => handleEditClick(property)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition"
+                  >
                     <Edit className="w-4 h-4" />
                     Modifier
                   </button>
@@ -219,7 +265,6 @@ export default function MesBiensPage() {
           ))}
         </div>
 
-        {/* Add Property Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -308,6 +353,120 @@ export default function MesBiensPage() {
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg hover:from-blue-700 hover:to-green-700 transition"
                 >
                   Ajouter le bien
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEditModal && formData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-gray-900 text-xl font-semibold">Modifier le bien</h2>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">Nom du bien</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 mb-2 font-medium">Type de bien</label>
+                    <select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                      <option>Appartement</option>
+                      <option>Maison</option>
+                      <option>Studio</option>
+                      <option>Commercial</option>
+                      <option>Terrain</option>
+                      <option>Parking</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 mb-2 font-medium">Adresse</label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-gray-700 mb-2 font-medium">Surface</label>
+                    <input
+                      type="text"
+                      name="size"
+                      value={formData.size}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 mb-2 font-medium">Pièces</label>
+                    <input
+                      type="text"
+                      name="rooms"
+                      value={formData.rooms}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 mb-2 font-medium">Loyer</label>
+                    <input
+                      type="text"
+                      name="rent"
+                      value={formData.rent}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">Statut</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option>Loué</option>
+                    <option>Disponible</option>
+                    <option>Non loué</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 flex gap-3">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Enregistrer les modifications
                 </button>
               </div>
             </div>
