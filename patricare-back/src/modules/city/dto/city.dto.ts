@@ -1,4 +1,3 @@
-// dto/lodging.dto.ts
 export class CityDto {
   id: number;
   nom: string;

@@ -1,24 +1,17 @@
-import { IsString, IsOptional } from 'class-validator';
+export class AlertDto {
+  id: number;
+  titre: string;
+  commentaire: string;
 
-export class CreateAlerteDto {
-  @IsString() titre: string;
-  @IsString() commentaire: string;
-
-  @IsOptional()
-  userId?: number;
-
-  @IsOptional()
-  logementId?: number;
-
-  @IsOptional()
-  typeId?: number;
-}
-
-export class UpdateAlerteDto {
-  @IsOptional() @IsString() titre?: string;
-  @IsOptional() @IsString() commentaire?: string;
-
-  @IsOptional() userId?: number;
-  @IsOptional() logementId?: number;
-  @IsOptional() typeId?: number;
+  user: {
+    id: number;
+    estLoue: boolean;
+    prixLoyer: number;
+    superficie: number;
+    nbPiece: number;
+  };
+  alert_type: {
+    id: number;
+    nom: string;
+  };
 }
