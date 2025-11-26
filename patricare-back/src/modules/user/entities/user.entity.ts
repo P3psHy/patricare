@@ -1,26 +1,29 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
-import { Logement } from "../../migrations/init/logement.entity";
-import { Role } from "../../migrations/init/role.entity";
-import { Documents } from "./document.entity";
+// ...existing code...
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Role } from '../../role/entities/role.entity';
+import { Lodging } from '../../lodging/entities/lodging.entity';
 
-@Entity('users')
+@Entity()
 export class User {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({ length: 50 })
-    firstname: string;
+  @Column({ unique: true })
+  email: string;
 
-    @Column({ length: 50 })
-    lastname: string;
+  // relation vers Role
+  @ManyToOne(() => Role, (r) => r.users, { nullable: false })
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
 
-    @ManyToOne(() => Role, role => role.users, { eager: true })
-    role: Role;
+  @Column()
+  roleId: number;
 
-    @OneToMany(() => Logement, logement => logement.owner)
-    logements: Logement[];
+  // relation vers Lodging (nullable)
+  @ManyToOne(() => Lodging, (l) => l.locataires, { nullable: true })
+  @JoinColumn({ name: 'logementId' })
+  logementHabite: Lodging | null;
 
-    @OneToMany(() => Documents, doc => doc.user)
-    documents: Document[];
-  rentedLogements: any;
+  @Column({ nullable: true })
+  logementId?: number;
 }

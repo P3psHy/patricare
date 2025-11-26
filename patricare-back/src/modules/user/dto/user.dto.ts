@@ -1,25 +1,20 @@
-import { IsString, IsEmail, IsOptional } from 'class-validator';
+export class UserDto {
+  id: number;
+  firstname: string;
+  lastname: string;
+  telephone: string;
+  mail: string;
+  password: string;
 
-export class CreateUserDto {
-  @IsString() firstname: string;
-  @IsString() lastname: string;
-  @IsString() telephone: string;
-
-  @IsEmail() mail: string;
-
-  @IsString() password: string;
-
-  @IsOptional()
-  roleId?: number;
-}
-
-export class UpdateUserDto {
-  @IsOptional() @IsString() firstname?: string;
-  @IsOptional() @IsString() lastname?: string;
-  @IsOptional() @IsString() telephone?: string;
-  @IsOptional() @IsEmail() mail?: string;
-  @IsOptional() @IsString() password?: string;
-
-  @IsOptional()
-  roleId?: number;
+  user: {
+    id: number;
+    estLoue: boolean;
+    prixLoyer: number;
+    superficie: number;
+    nbPiece: number;
+  };
+  role: {
+    id: number;
+    role: string;
+  };
 }

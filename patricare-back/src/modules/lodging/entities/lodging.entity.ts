@@ -7,6 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Adresse } from '../../address/entities/adresse.entity';
+import { User } from '../../user/entities/user.entity';
 
 @Entity('logements')
 export class Lodging {
@@ -32,4 +33,15 @@ export class Lodging {
   @JoinColumn({ name: 'adresseId' })
   adresse!: Adresse;
 
+  // === propriétaire (1 user propriétaire par logement) ===
+  @ManyToOne(() => User, (user) => user.logementId, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'proprietaireId' })
+  proprietaire!: User;
+
+  // === locataires (plusieurs users peuvent être locataires); OneToMany côté Lodging ===
+  @OneToMany(() => User, (user) => user.logementHabite, { eager: true })
+  locataires!: User[];
 }

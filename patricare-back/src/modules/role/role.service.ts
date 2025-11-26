@@ -2,10 +2,10 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
+import { User } from '../user/entities/user.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { IRoleService } from './role-service.interface';
-import { User } from '../user/entities/user.entity';
+import { RoleFilter, IRoleService } from './role-service.interface';
 
 @Injectable()
 export class RoleService implements IRoleService {
@@ -17,46 +17,47 @@ export class RoleService implements IRoleService {
   async create(dto: CreateRoleDto): Promise<Role> {
     const exists = await this.roleRepo.findOne({ where: { role: dto.role } });
     if (exists) throw new ConflictException('Role already exists');
-    const role = this.roleRepo.create(dto as any);
-    return this.roleRepo.save(role);
+
+    const role = this.roleRepo.create({ role: dto.role } as Partial<Role>);
+    const saved = await this.roleRepo.save(role);
+    return this.findOne(saved.id);
   }
 
-  async findAll(filter?: { role?: string; limit?: number; offset?: number }): Promise<Role[]> {
+  async findAll(filter?: RoleFilter): Promise<Role[]> {
     const qb = this.roleRepo.createQueryBuilder('r').leftJoinAndSelect('r.users', 'users');
-    if (filter?.role) qb.andWhere('r.role ILIKE :role', { role: `%${filter.role}%` });
+
+    if (filter?.role) qb.andWhere('r.role LIKE :role', { role: `%${filter.role}%` });
     if (filter?.limit) qb.take(filter.limit);
     if (filter?.offset) qb.skip(filter.offset);
+
     return qb.getMany();
   }
 
   async findOne(id: number): Promise<Role> {
     const role = await this.roleRepo.findOne({ where: { id }, relations: ['users'] });
-    if (!role) throw new NotFoundException('Role not found');
+    if (!role) throw new NotFoundException('Role introuvable');
     return role;
   }
 
   async update(id: number, dto: UpdateRoleDto): Promise<Role> {
-    const role = await this.roleRepo.findOne({ where: { id } });
-    if (!role) throw new NotFoundException('Role not found');
+    const role = await this.findOne(id);
 
-    if (dto.role && dto.role !== role.role) {
+    if (dto.role !== undefined && dto.role !== role.role) {
       const exists = await this.roleRepo.findOne({ where: { role: dto.role } });
       if (exists) throw new ConflictException('Role already exists');
+      role.role = dto.role;
     }
 
-    Object.assign(role, dto);
-    return this.roleRepo.save(role);
+    const saved = await this.roleRepo.save(role);
+    return this.findOne(saved.id);
   }
 
   async remove(id: number): Promise<void> {
-    const role = await this.roleRepo.findOne({ where: { id }, relations: ['users'] });
-    if (!role) throw new NotFoundException('Role not found');
-
-    // Prevent deletion if users are assigned to this role — adapt to desired behavior
-    if (role.users && role.users.length > 0) {
-      throw new BadRequestException('Cannot delete role with assigned users');
+    const usersCount = await this.userRepo.count({ where: { roleId: id } });
+    if (usersCount > 0) {
+      throw new BadRequestException('Cannot delete role assigned to users');
     }
-
-    await this.roleRepo.delete(id);
+    const res = await this.roleRepo.delete(id);
+    if (res.affected === 0) throw new NotFoundException('Role introuvable');
   }
 }
