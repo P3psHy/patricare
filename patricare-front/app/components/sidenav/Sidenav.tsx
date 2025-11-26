@@ -1,6 +1,5 @@
 "use client";
 
-import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import SidenavItem from './SidenavItem';
@@ -20,8 +19,8 @@ const Sidenav = () => {
             <Image src={Logo} alt="PatriCare Logo" width={64} height={64} />
           </div>
           <div className='w-full flex flex-col text-center md:text-left'>
-            <h1 className="text-sm md:text-lg font-bold text-gray-900 leading-tight">PatriCare</h1>
-            <p className="text-xs md:text-sm text-gray-500">Gestion immobilière</p>
+            <h1 className="text-md md:text-xl font-bold text-gray-900 leading-tight">PatriCare</h1>
+            <p className="text-gray-500">Gestion immobilière</p>
           </div>
         </Link>
       </div>
@@ -58,7 +57,7 @@ const Sidenav = () => {
           isActive={routerPath === '/parametres'}
         />
         <button
-          className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          className="w-full flex items-center px-3 py-2.5 text-md font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
           onClick={() => { router.replace("/login"); }}
         >
           Déconnexion
