@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lodging } from './entities/lodging.entity';
-import { Adresse } from '../address/entities/adresse.entity';
+import { Adresse } from '../address/entities/address.entity';
 import { CreateLodgingDto } from './dto/create-lodging.dto';
 import { UpdateLodgingDto } from './dto/update-lodging.dto';
 import { ILodgingService, LodgingFilter } from './lodging-service.interface';
