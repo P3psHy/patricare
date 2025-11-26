@@ -1,15 +1,25 @@
-import { IsString, IsOptional } from 'class-validator';
+export class DocumentDto {
+  id: number;
+  nom: string;
+  type: string;
+  dateModification: string;
 
-export class CreateDocumentDto {
-  @IsString() nom: string;
-  @IsString() type: string;
+  // Relation Document <-> Logement via Rerelier
+  lodging: {
+    id: number;
+    estLoue: boolean;
+    prixLoyer: number;
+    superficie: number;
+    nbPiece: number;
+  }[];
 
-  @IsOptional()
-  dateModification?: Date;
-}
-
-export class UpdateDocumentDto {
-  @IsOptional() @IsString() nom?: string;
-  @IsOptional() @IsString() type?: string;
-  @IsOptional() dateModification?: Date;
+  // Relation Document <-> User via Relier
+  user: {
+    id: number;
+    firstname: string;
+    lastname: string;
+    telephone: string;
+    mail: string;
+    password: string;
+  }[];
 }
