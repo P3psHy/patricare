@@ -2,10 +2,19 @@
 
 import { notFound } from "next/navigation";
 import { useState, useEffect } from "react";
-import { use } from "react";
+import { api } from "@/lib/api";
+
+interface LodgingApi {
+  id: number;
+  estLoue: boolean;
+  prixLoyer: number;
+  superficie: number;
+  nbPiece: number;
+  description?: string;
+}
 
 interface Bien {
-  id: string;
+  id: number;
   titre: string;
   adresse: string;
   type: string;
@@ -14,58 +23,60 @@ interface Bien {
   createdAt: string;
 }
 
-const mockBiens: Record<string, Bien> = {
-  "1": {
-    id: "1",
-    titre: "Appartement Paris 15ème",
-    adresse: "45 Rue de Vaugirard, 75015 Paris",
-    type: "Appartement",
-    superficie: 65,
-    description: "Bel appartement lumineux proche des commerces. Rénové récemment.",
-    createdAt: "2024-03-15",
-  },
-  "2": {
-    id: "2",
-    titre: "Maison Lyon Centre",
-    adresse: "12 Avenue Jean Jaurès, 69007 Lyon",
-    type: "Maison",
-    superficie: 120,
-    description: "Grande maison spacieuse avec jardin.",
-    createdAt: "2024-02-20",
-  },
-  "3": {
-    id: "3",
-    titre: "Studio Bordeaux",
-    adresse: "8 Cours de l'Intendance, 33000 Bordeaux",
-    type: "Studio",
-    superficie: 28,
-    description: "Petit studio cosy idéal pour étudiant.",
-    createdAt: "2024-01-10",
-  },
-};
-
-async function getBien(id: string): Promise<Bien | null> {
-  return mockBiens[id] || null;
-}
-
 export default function BienDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(
+    null,
+  );
   const [bien, setBien] = useState<Bien | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState<Bien | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getBien(id).then((data) => {
-      setBien(data);
-      setFormData(data);
-      setLoading(false);
+    params.then(setResolvedParams).catch(() => {
+      setError("Paramètre invalide.");
     });
-  }, [id]);
+  }, [params]);
+
+  useEffect(() => {
+    if (!resolvedParams) return;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await api.get<LodgingApi>(
+          `/lodgings/${resolvedParams.id}`,
+        );
+
+        const mapped: Bien = {
+          id: data.id,
+          titre: data.description || `Bien #${data.id}`,
+          adresse: `Superficie ${data.superficie} m²`,
+          type: "Bien",
+          superficie: data.superficie,
+          description: data.description,
+          createdAt: "",
+        };
+
+        setBien(mapped);
+        setFormData(mapped);
+      } catch (e) {
+        console.error(e);
+        setError("Impossible de charger le bien depuis l'API.");
+        setBien(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [resolvedParams]);
 
   if (loading) {
     return <div className="p-6">Chargement...</div>;
