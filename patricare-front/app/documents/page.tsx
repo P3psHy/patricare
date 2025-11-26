@@ -1,6 +1,6 @@
-"use client";
+ "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FileText,
   Upload,
@@ -14,6 +14,24 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+
+interface DocumentApi {
+  id: number;
+  nom: string;
+  type: string;
+  dateModification: string;
+}
+
+interface DocumentRow {
+  id: number;
+  name: string;
+  type: string;
+  size: string;
+  folder: string;
+  date: string;
+  property: string;
+}
 
 export default function DocumentsPage() {
   const router = useRouter();
@@ -35,95 +53,55 @@ export default function DocumentsPage() {
   };
 
   const folders = [
-    { id: "baux", name: "Baux de location", count: 12, color: "blue" },
-    { id: "factures", name: "Factures", count: 45, color: "green" },
-    { id: "taxes", name: "Taxes & Impôts", count: 18, color: "orange" },
-    { id: "assurances", name: "Assurances", count: 8, color: "purple" },
-    { id: "travaux", name: "Travaux & Réparations", count: 23, color: "red" },
-    { id: "diagnostics", name: "Diagnostics", count: 15, color: "yellow" },
+    { id: "generiques", name: "Documents génériques", count: 0, color: "blue" },
   ];
 
-  const documents = [
-    {
-      id: 1,
-      name: "Bail - Appartement Paris 15ème - Marie Dubois.pdf",
-      type: "PDF",
-      size: "2.4 MB",
-      folder: "Baux de location",
-      date: "15 Nov 2025",
-      property: "Appartement Paris 15ème",
-    },
-    {
-      id: 2,
-      name: "Taxe foncière 2025 - Maison Lyon.pdf",
-      type: "PDF",
-      size: "1.2 MB",
-      folder: "Taxes & Impôts",
-      date: "10 Nov 2025",
-      property: "Maison Lyon Centre",
-    },
-    {
-      id: 3,
-      name: "Assurance habitation - Studio Bordeaux.pdf",
-      type: "PDF",
-      size: "890 KB",
-      folder: "Assurances",
-      date: "05 Nov 2025",
-      property: "Studio Bordeaux",
-    },
-    {
-      id: 4,
-      name: "Facture plomberie - Bureau Lille.pdf",
-      type: "PDF",
-      size: "450 KB",
-      folder: "Factures",
-      date: "28 Oct 2025",
-      property: "Bureau Lille",
-    },
-    {
-      id: 5,
-      name: "Diagnostic énergétique - Appartement Paris.pdf",
-      type: "PDF",
-      size: "3.1 MB",
-      folder: "Diagnostics",
-      date: "20 Oct 2025",
-      property: "Appartement Paris 15ème",
-    },
-    {
-      id: 6,
-      name: "Facture électricité - Maison Lyon.pdf",
-      type: "PDF",
-      size: "320 KB",
-      folder: "Factures",
-      date: "15 Oct 2025",
-      property: "Maison Lyon Centre",
-    },
-    {
-      id: 7,
-      name: "Travaux peinture - Studio Bordeaux.xlsx",
-      type: "XLSX",
-      size: "156 KB",
-      folder: "Travaux & Réparations",
-      date: "12 Oct 2025",
-      property: "Studio Bordeaux",
-    },
-    {
-      id: 8,
-      name: "Contrat assurance propriétaire - Bureau Lille.pdf",
-      type: "PDF",
-      size: "1.8 MB",
-      folder: "Assurances",
-      date: "08 Oct 2025",
-      property: "Bureau Lille",
-    },
-  ];
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredDocuments = documents.filter(
-    (doc) =>
-      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.folder.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const docs = await api.get<DocumentApi[]>("/documents");
+
+        const mapped: DocumentRow[] = docs.map((d) => ({
+          id: d.id,
+          name: d.nom,
+          type: d.type,
+          size: "-",
+          folder: "Documents génériques",
+          date: d.dateModification,
+          property: "-",
+        }));
+
+        setDocuments(mapped);
+      } catch (e) {
+        console.error(e);
+        setError("Impossible de charger les documents depuis l'API.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  const normalizedSearch = (searchTerm ?? "").toUpperCase();
+
+  const filteredDocuments = documents.filter((doc) => {
+    const name = (doc.name ?? "").toUpperCase();
+    const property = (doc.property ?? "").toUpperCase();
+    const folder = (doc.folder ?? "").toUpperCase();
+
+    return (
+      name.includes(normalizedSearch) ||
+      property.includes(normalizedSearch) ||
+      folder.includes(normalizedSearch)
+    );
+  });
 
   const selectedFolderName = selectedFolder
     ? folders.find((f) => f.id === selectedFolder)?.name
