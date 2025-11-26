@@ -1,9 +1,10 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateDocumentDto {
-  @IsString() nom: string;
-  @IsString() type: string;
+  @IsString() titre: string;
+  @IsString() cheminFichier: string;
 
   @IsOptional()
-  dateModification?: Date;
+  @IsNumber()
+  userId?: number;
 }

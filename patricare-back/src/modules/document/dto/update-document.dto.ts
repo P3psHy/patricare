@@ -1,7 +1,7 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsNumber } from 'class-validator';
 
 export class UpdateDocumentDto {
-  @IsOptional() @IsString() nom?: string;
-  @IsOptional() @IsString() type?: string;
-  @IsOptional() dateModification?: Date;
+  @IsOptional() @IsString() titre?: string;
+  @IsOptional() @IsString() cheminFichier?: string;
+  @IsOptional() @IsNumber() userId?: number;
 }
