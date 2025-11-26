@@ -1,4 +1,8 @@
+'use client';
+
 import { Building2, FileText, Users, TrendingUp, AlertCircle, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import Link from "next/link";
 
 type StatColor = "blue" | "green" | "purple" | "orange";
@@ -26,25 +30,24 @@ interface UpcomingTask {
   priority: "high" | "medium" | "low";
 }
 
-const stats: StatCard[] = [
-  { label: "Biens immobiliers", value: "12", icon: Building2, color: "blue" },
-  { label: "Locataires actifs", value: "8", icon: Users, color: "green" },
-  { label: "Documents", value: "156", icon: FileText, color: "purple" },
-  { label: "Revenus mensuels", value: "8 450 €", icon: TrendingUp, color: "orange" },
-];
+interface LodgingApi {
+  id: number;
+  estLoue: boolean;
+  prixLoyer: number;
+  superficie: number;
+  nbPiece: number;
+  description?: string;
+}
 
-const recentProperties: PropertyRow[] = [
-  { id: 1, name: "Appartement Paris 15ème", type: "Appartement", tenant: "Marie Dubois", rent: "1 250 €", status: "Loué" },
-  { id: 2, name: "Maison Lyon Centre", type: "Maison", tenant: "Pierre Martin", rent: "1 800 €", status: "Loué" },
-  { id: 3, name: "Studio Bordeaux", type: "Studio", tenant: "Vacant", rent: "650 €", status: "Disponible" },
-  { id: 4, name: "Bureau Lille", type: "Commercial", tenant: "Sophie Bernard", rent: "2 100 €", status: "Loué" },
-];
+interface UserApi {
+  id: number;
+  firstname: string;
+  lastname: string;
+}
 
-const upcomingTasks: UpcomingTask[] = [
-  { id: 1, title: "Renouvellement bail - Appartement Paris", date: "15 Déc 2025", priority: "high" },
-  { id: 2, title: "Paiement taxe foncière - Maison Lyon", date: "20 Déc 2025", priority: "medium" },
-  { id: 3, title: "Révision annuelle loyer - Studio Bordeaux", date: "28 Déc 2025", priority: "low" },
-];
+interface DocumentApi {
+  id: number;
+}
 
 const statColorClasses: Record<StatColor, string> = {
   blue: "bg-blue-50 text-blue-600",
@@ -60,6 +63,76 @@ const priorityAccent: Record<UpcomingTask["priority"], { bar: string; icon: stri
 };
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<StatCard[]>([]);
+  const [recentProperties, setRecentProperties] = useState<PropertyRow[]>([]);
+  const [upcomingTasks] = useState<UpcomingTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [lodgings, users, documents] = await Promise.all([
+          api.get<LodgingApi[]>("/lodgings"),
+          api.get<UserApi[]>("/users"),
+          api.get<DocumentApi[]>("/documents"),
+        ]);
+
+        const totalRents = lodgings.reduce(
+          (sum, l) => sum + (l.prixLoyer || 0),
+          0,
+        );
+
+        setStats([
+          {
+            label: "Biens immobiliers",
+            value: `${lodgings.length}`,
+            icon: Building2,
+            color: "blue",
+          },
+          {
+            label: "Locataires (utilisateurs)",
+            value: `${users.length}`,
+            icon: Users,
+            color: "green",
+          },
+          {
+            label: "Documents",
+            value: `${documents.length}`,
+            icon: FileText,
+            color: "purple",
+          },
+          {
+            label: "Revenus mensuels (loyers)",
+            value: `${totalRents} €`,
+            icon: TrendingUp,
+            color: "orange",
+          },
+        ]);
+
+        const mappedRecent: PropertyRow[] = lodgings.slice(0, 4).map((l) => ({
+          id: l.id,
+          name: l.description || `Bien #${l.id}`,
+          type: "Bien",
+          tenant: "-",
+          rent: `${l.prixLoyer} €`,
+          status: l.estLoue ? "Loué" : "Disponible",
+        }));
+        setRecentProperties(mappedRecent);
+      } catch (e) {
+        console.error(e);
+        setError("Impossible de charger les données du tableau de bord.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
   return (
     <main className="w-full flex-1 px-4 py-8 md:py-8 space-y-4 md:space-y-8">
       <header className="mb-4 md:mb-6">
@@ -83,6 +156,15 @@ export default function Dashboard() {
           );
         })}
       </section>
+
+      {loading && (
+        <p className="text-gray-500 text-sm mb-2">
+          Chargement des données du tableau de bord...
+        </p>
+      )}
+      {error && (
+        <p className="text-red-600 text-sm mb-2">{error}</p>
+      )}
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         <article className="lg:col-span-3 rounded-xl border border-gray-200 bg-white shadow-sm">

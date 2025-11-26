@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -12,6 +12,16 @@ import {
   Trash2,
   Eye,
 } from 'lucide-react';
+import { api } from '@/lib/api';
+
+interface LodgingApi {
+  id: number;
+  estLoue: boolean;
+  prixLoyer: number;
+  superficie: number;
+  nbPiece: number;
+  description?: string;
+}
 
 interface Property {
   id: number;
@@ -30,82 +40,43 @@ export default function MesBiensPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [properties, setProperties] = useState<Property[]>([
-    {
-      id: 1,
-      name: 'Appartement Paris 15ème',
-      type: 'Appartement',
-      address: '45 Rue de Vaugirard, 75015 Paris',
-      size: '65 m²',
-      rooms: '3 pièces',
-      rent: '1,250 €',
-      tenant: 'Marie Dubois',
-      status: 'Loué',
-      image: 'apartment',
-    },
-    {
-      id: 2,
-      name: 'Maison Lyon Centre',
-      type: 'Maison',
-      address: '12 Avenue Jean Jaurès, 69007 Lyon',
-      size: '120 m²',
-      rooms: '5 pièces',
-      rent: '1,800 €',
-      tenant: 'Pierre Martin',
-      status: 'Loué',
-      image: 'house',
-    },
-    {
-      id: 3,
-      name: 'Studio Bordeaux',
-      type: 'Studio',
-      address: "8 Cours de l'Intendance, 33000 Bordeaux",
-      size: '28 m²',
-      rooms: '1 pièce',
-      rent: '650 €',
-      tenant: null,
-      status: 'Disponible',
-      image: 'studio',
-    },
-    {
-      id: 4,
-      name: 'Bureau Lille',
-      type: 'Commercial',
-      address: '23 Rue Nationale, 59000 Lille',
-      size: '85 m²',
-      rooms: '4 pièces',
-      rent: '2,100 €',
-      tenant: 'Sophie Bernard',
-      status: 'Loué',
-      image: 'office',
-    },
-    {
-      id: 5,
-      name: 'Terrain Marseille',
-      type: 'Terrain',
-      address: 'Route des Calanques, 13008 Marseille',
-      size: '500 m²',
-      rooms: '-',
-      rent: '-',
-      tenant: null,
-      status: 'Non loué',
-      image: 'land',
-    },
-    {
-      id: 6,
-      name: 'Parking Toulouse',
-      type: 'Parking',
-      address: '15 Place du Capitole, 31000 Toulouse',
-      size: '12 m²',
-      rooms: '-',
-      rent: '120 €',
-      tenant: 'Jean Dupont',
-      status: 'Loué',
-      image: 'parking',
-    },
-  ]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [formData, setFormData] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const lodgings = await api.get<LodgingApi[]>('/lodgings');
+
+        const mapped: Property[] = lodgings.map((l) => ({
+          id: l.id,
+          name: l.description || `Bien #${l.id}`,
+          type: 'Bien',
+          address: `Superficie ${l.superficie} m²`,
+          size: `${l.superficie} m²`,
+          rooms: `${l.nbPiece} pièces`,
+          rent: `${l.prixLoyer} €`,
+          tenant: null,
+          status: l.estLoue ? 'Loué' : 'Disponible',
+          image: 'property',
+        }));
+
+        setProperties(mapped);
+      } catch (e) {
+        console.error(e);
+        setError("Impossible de charger les biens depuis l'API.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
 
   const filteredProperties = properties.filter((property) =>
     property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -187,6 +158,13 @@ export default function MesBiensPage() {
             </select>
           </div>
         </div>
+
+        {loading && (
+          <p className="text-gray-500 mb-4">Chargement des biens...</p>
+        )}
+        {error && (
+          <p className="text-red-600 mb-4 text-sm">{error}</p>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProperties.map((property) => (
