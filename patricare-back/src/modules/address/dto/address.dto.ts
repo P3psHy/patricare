@@ -1,17 +1,14 @@
-import { IsString, IsOptional } from 'class-validator';
+// dto/lodging.dto.ts
+export class AddressDto {
+  id: number;
+  rue: string;
 
-export class CreateAdresseDto {
-  @IsString() rue: string;
-
-  @IsOptional()
-  villeId?: number;
-}
-
-export class UpdateAdresseDto {
-  @IsOptional()
-  @IsString()
-  rue?: string;
-
-  @IsOptional()
-  villeId?: number;
+  // Relation Ville <-> Adresse via Associer
+  city: {
+    id: number;
+    nom: string;
+    codePostal: string;
+    departement: string;
+    region: string;
+  }[];
 }
