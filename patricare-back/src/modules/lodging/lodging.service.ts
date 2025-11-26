@@ -1,94 +1,68 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-
+import { Injectable } from '@nestjs/common';
 import { Lodging } from './entities/lodging.entity';
-import { CreateLodgingDto } from './dto/create-lodging.dto';
-import { UpdateLodgingDto } from './dto/update-lodging.dto';
-import { LodgingDto } from './dto/lodging.dto';
-import { Adresse } from '../address/entities/adresse.entity';
 
 @Injectable()
 export class LodgingService {
-  constructor(
-    @InjectRepository(Lodging)
-    private readonly lodgingRepository: Repository<Lodging>,
-  ) {}
+  private lodgings = new Map<number, Lodging>();
+  private idCounter = 1;
 
-  async findAll(): Promise<LodgingDto[]> {
-    const entities = await this.lodgingRepository.find({
-      relations: ['adresse', 'logers', 'logers.user'],
+  constructor() {
+    this.initializeLodgings();
+  }
+
+  private initializeLodgings(): void {
+    this.create({
+      estLoue: true,
+      prixLoyer: 1200,
+      superficie: 65,
+      nbPiece: 2,
+      adresseId: 1,
+      description: 'Bel appartement avec vue sur la Seine'
     });
-
-    return entities.map((entity) => this.toDTO(entity));
-  }
-
-  async findById(id: number): Promise<LodgingDto> {
-    const entity = await this.lodgingRepository.findOne({
-      where: { id },
-      relations: ['adresse', 'logers', 'logers.user'],
+    this.create({
+      estLoue: false,
+      prixLoyer: 2000,
+      superficie: 120,
+      nbPiece: 4,
+      adresseId: 2,
+      description: 'Spacieux T4 au cœur de Paris'
     });
-
-    if (!entity) {
-      throw new NotFoundException(`Logement avec l'id ${id} non trouvé`);
-    }
-
-    return this.toDTO(entity);
-  }
-
-  async create(dto: CreateLodgingDto): Promise<LodgingDto> {
-    const entity = this.lodgingRepository.create({
-      estLoue: dto.estLoue,
-      prixLoyer: dto.prixLoyer,
-      superficie: dto.superficie,
-      nbPiece: dto.nbPiece,
-      adresse: { id: dto.adresseId } as Adresse,
+    this.create({
+      estLoue: true,
+      prixLoyer: 800,
+      superficie: 35,
+      nbPiece: 1,
+      adresseId: 3,
+      description: 'Studio cosy proche du métro'
     });
-
-    const saved = await this.lodgingRepository.save(entity);
-    return this.toDTO(saved);
   }
 
-  async update(id: number, dto: UpdateLodgingDto): Promise<LodgingDto> {
-    const entity = await this.lodgingRepository.findOne({ where: { id } });
-
-    if (!entity) {
-      throw new NotFoundException(`Logement avec l'id ${id} non trouvé`);
-    }
-
-    entity.estLoue = dto.estLoue ?? entity.estLoue;
-    entity.prixLoyer = dto.prixLoyer ?? entity.prixLoyer;
-    entity.superficie = dto.superficie ?? entity.superficie;
-    entity.nbPiece = dto.nbPiece ?? entity.nbPiece;
-
-    if (dto.adresseId) {
-      entity.adresse = { id: dto.adresseId } as Adresse;
-    }
-
-    const updated = await this.lodgingRepository.save(entity);
-    return this.toDTO(updated);
+  create(lodgingData: Partial<Lodging>): Lodging {
+    const lodging = new Lodging(lodgingData);
+    lodging.id = this.idCounter++;
+    this.lodgings.set(lodging.id, lodging);
+    return lodging;
   }
 
-  async delete(id: number): Promise<void> {
-    const result = await this.lodgingRepository.delete(id);
-
-    if (result.affected === 0) {
-      throw new NotFoundException(`Logement avec l'id ${id} non trouvé`);
-    }
+  findAll(): Lodging[] {
+    return Array.from(this.lodgings.values());
   }
 
-  private toDTO(entity: Lodging): LodgingDto {
-    return {
-      id: entity.id,
-      estLoue: entity.estLoue,
-      prixLoyer: entity.prixLoyer,
-      superficie: entity.superficie,
-      nbPiece: entity.nbPiece,
-      adresseId: entity.adresse?.id,
-      users: entity.logers?.map((loger) => ({
-        userId: loger.user.id,
-        statut: loger.statut,
-      })) ?? [],
-    };
+  findOne(id: number): Lodging | undefined {
+    return this.lodgings.get(id);
+  }
+
+  update(id: number, lodgingData: Partial<Lodging>): Lodging | undefined {
+    const lodging = this.lodgings.get(id);
+    if (lodging) {
+      Object.assign(lodging, lodgingData);
+      this.lodgings.set(id, lodging);
+      return lodging;
+    }
+    return undefined;
+  }
+
+  delete(id: number): boolean {
+    return this.lodgings.delete(id);
   }
 }
