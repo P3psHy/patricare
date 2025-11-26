@@ -1,5 +1,5 @@
 // dto/lodging.dto.ts
-export class cityDto {
+export class CityDto {
   id: number;
   nom: string;
   codePostal: string;
