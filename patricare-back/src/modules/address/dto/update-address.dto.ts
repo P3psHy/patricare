@@ -1,6 +1,6 @@
 import { IsString, IsOptional } from 'class-validator';
 
-export class UpdateAdresseDto {
+export class UpdateAddressDto {
   @IsOptional()
   @IsString()
   rue?: string;
