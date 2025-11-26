@@ -29,11 +29,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="container flex gap-1">
-          <div className="sidenav">
+        <div className="w-full flex gap-1">
+          <div className="w-1/3 md:w-1/4 max-w-64 sidenav">
             <Sidenav />
           </div>
-          <div className="max-h-100vh flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto w-2/3 md:w-3/4">
             {children}
           </div>
         </div>
