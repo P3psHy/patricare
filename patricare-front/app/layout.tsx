@@ -25,11 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="w-screen h-screen">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        <div className="w-full flex gap-1">
+        <div className="w-full h-full flex gap-1">
           <div className="w-1/3 md:w-1/4 max-w-64 sidenav">
             <Sidenav />
           </div>
