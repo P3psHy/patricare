@@ -1,6 +1,6 @@
  "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Users,
   Plus,
@@ -10,6 +10,15 @@ import {
   Home,
   Calendar,
 } from "lucide-react";
+import { api } from "@/lib/api";
+
+interface UserApi {
+  id: number;
+  firstname: string;
+  lastname: string;
+  email?: string;
+  telephone?: string;
+}
 
 interface Tenant {
   id: number;
@@ -24,60 +33,45 @@ interface Tenant {
   paymentStatus: "paid" | "late";
 }
 
-const tenants: Tenant[] = [
-  {
-    id: 1,
-    name: "Marie Dubois",
-    email: "marie.dubois@email.com",
-    phone: "+33 6 12 34 56 78",
-    property: "Appartement Paris 15ème",
-    rent: "1 250 €",
-    rentDate: "1er du mois",
-    entryDate: "01 Jan 2024",
-    status: "À jour",
-    paymentStatus: "paid",
-  },
-  {
-    id: 2,
-    name: "Pierre Martin",
-    email: "pierre.martin@email.com",
-    phone: "+33 6 23 45 67 89",
-    property: "Maison Lyon Centre",
-    rent: "1 800 €",
-    rentDate: "5 du mois",
-    entryDate: "15 Mar 2023",
-    status: "À jour",
-    paymentStatus: "paid",
-  },
-  {
-    id: 3,
-    name: "Sophie Bernard",
-    email: "sophie.bernard@email.com",
-    phone: "+33 6 34 56 78 90",
-    property: "Bureau Lille",
-    rent: "2 100 €",
-    rentDate: "1er du mois",
-    entryDate: "10 Jun 2024",
-    status: "En retard",
-    paymentStatus: "late",
-  },
-  {
-    id: 4,
-    name: "Jean Dupont",
-    email: "jean.dupont@email.com",
-    phone: "+33 6 45 67 89 01",
-    property: "Parking Toulouse",
-    rent: "120 €",
-    rentDate: "1er du mois",
-    entryDate: "20 Feb 2024",
-    status: "À jour",
-    paymentStatus: "paid",
-  },
-];
-
 export default function Locataires() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const users = await api.get<UserApi[]>("/users");
+
+        const mapped: Tenant[] = users.map((u) => ({
+          id: u.id,
+          name: `${u.firstname} ${u.lastname}`,
+          email: u.email ?? "",
+          phone: u.telephone ?? "",
+          property: "N/A",
+          rent: "N/A",
+          rentDate: "-",
+          entryDate: "-",
+          status: "Non défini",
+          paymentStatus: "paid",
+        }));
+
+        setTenants(mapped);
+      } catch (e) {
+        console.error(e);
+        setError("Impossible de charger les locataires depuis l'API.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
 
   const filteredTenants = tenants.filter((tenant) =>
     [tenant.name, tenant.email, tenant.property]
