@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 const LoginForm = () => {
@@ -9,10 +10,12 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
+  const router = useRouter();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Logique de connexion ici
-    console.log({ email, password, rememberMe });
+    
+    router.replace('/dashboard');
   };
 
   return (
