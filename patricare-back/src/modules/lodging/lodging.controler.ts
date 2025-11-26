@@ -1,59 +1,34 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  ParseIntPipe,
-} from '@nestjs/common';
-
-import { LodgingServiceInterface } from './lodging-service.interface';
+import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
+import { LodgingService } from './lodging.service';
 import { CreateLodgingDto } from './dto/create-lodging.dto';
-import { UpdateLodgingDto } from './dto/update-lodging.dto';
-import { LodgingDto } from './dto/lodging.dto'; // <- ajouté
 
-@Controller('logements')
+@Controller('lodgings')
 export class LodgingController {
-  constructor(private readonly lodgingService: LodgingServiceInterface) {}
+  constructor(private readonly lodgingService: LodgingService) { }
 
-  // GET /logements
+  @Post()
+  create(@Body() createLodgingDto: CreateLodgingDto) {
+    return this.lodgingService.create(createLodgingDto);
+  }
+
   @Get()
-  async getAll(): Promise<LodgingDto[]> {
+  findAll() {
     return this.lodgingService.findAll();
   }
 
-  // GET /logements/:id
   @Get(':id')
-  async getOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<LodgingDto> {
-    return this.lodgingService.findById(id);
+  findOne(@Param('id') id: string) {
+    return this.lodgingService.findOne(+id);
   }
 
-  // POST /logements
-  @Post()
-  async create(
-    @Body() dto: CreateLodgingDto,
-  ): Promise<LodgingDto> {
-    return this.lodgingService.create(dto);
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateLodgingDto: CreateLodgingDto) {
+    return this.lodgingService.update(+id, updateLodgingDto);
   }
 
-  // PUT /logements/:id
-  @Put(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateLodgingDto,
-  ): Promise<LodgingDto> {
-    return this.lodgingService.update(id, dto);
-  }
-
-  // DELETE /logements/:id
   @Delete(':id')
-  async delete(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<void> {
-    return this.lodgingService.delete(id);
+  delete(@Param('id') id: string) {
+    this.lodgingService.delete(+id);
+    return { success: true };
   }
 }

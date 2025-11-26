@@ -1,8 +1,8 @@
-export class Role {
+export class Type {
     id?: number;
     libelle: string;
 
-    constructor(data?: Partial<Role>) {
+    constructor(data?: Partial<Type>) {
         if (data) {
             Object.assign(this, data);
         }

@@ -1,23 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Adresse } from "../../address/entities/adresse.entity";
-
-@Entity()
 export class Ville {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
+    id?: number;
     nom: string;
-
-    @Column()
     codePostal: string;
+    departement?: string;
+    region?: string;
 
-    @Column()
-    departement: string;
-
-    @Column()
-    region: string;
-
-    @OneToMany(() => Adresse, adresse => adresse.ville)
-    adresses: Adresse[];
+    constructor(data?: Partial<Ville>) {
+        if (data) {
+            Object.assign(this, data);
+        }
+    }
 }

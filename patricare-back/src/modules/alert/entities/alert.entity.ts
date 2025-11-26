@@ -1,11 +1,12 @@
-export class Document {
+export class Alert {
     id?: number;
     titre: string;
-    cheminFichier: string;
+    description?: string;
     dateCreation?: Date;
     userId?: number;
+    typeId?: number;
 
-    constructor(data?: Partial<Document>) {
+    constructor(data?: Partial<Alert>) {
         if (data) {
             Object.assign(this, data);
         }

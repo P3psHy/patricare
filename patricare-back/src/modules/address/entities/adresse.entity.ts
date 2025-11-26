@@ -1,18 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
-import { Logement } from "../../../migrations/init/logement.entity";
-import { Ville } from "../../city/entities/ville.entity";
-
-@Entity()
 export class Adresse {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ length: 50 })
+  id?: number;
   rue: string;
+  numero?: string;
+  complement?: string;
+  villeId?: number;
 
-  @ManyToOne(() => Ville, (ville) => ville.adresses)
-  ville: Ville;
-
-  @OneToMany(() => Logement, (logement) => logement.adresse)
-  logements: Logement[];
+  constructor(data?: Partial<Adresse>) {
+    if (data) {
+      Object.assign(this, data);
+    }
+  }
 }
