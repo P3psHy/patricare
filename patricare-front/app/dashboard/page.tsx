@@ -91,7 +91,7 @@ export default function Dashboard() {
               <h2 className="text-md md:text-xl font-semibold text-gray-900">Mes biens récents</h2>
               <p className="text-md text-gray-500">Suivez vos derniers mouvements immobiliers.</p>
             </div>
-            <Link href="/mes-biens" className="flex text-md font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/lodgings" className="flex text-md font-medium text-blue-600 hover:text-blue-700">
               Voir tout
             </Link>
           </header>

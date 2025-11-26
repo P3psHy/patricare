@@ -33,9 +33,9 @@ const Sidenav = () => {
           isActive={routerPath === '/dashboard' || routerPath === '/'}
         />
         <SidenavItem
-          href="/mes-biens"
+          href="/lodgings"
           label="Mes biens"
-          isActive={routerPath === '/mes-biens'}
+          isActive={routerPath === '/lodgings'}
         />
         <SidenavItem
           href="/documents"
@@ -43,19 +43,14 @@ const Sidenav = () => {
           isActive={routerPath === '/documents'}
         />
         <SidenavItem
-          href="/locataires"
+          href="/tenants"
           label="Locataires"
-          isActive={routerPath === '/locataires'}
+          isActive={routerPath === '/tenants'}
         />
       </nav>
 
-      {/* Menu Bas (Paramètres et Déconnexion) */}
+      {/* Menu Bas (Déconnexion) */}
       <div className="p-4 border-t border-gray-100 space-y-1">
-        <SidenavItem
-          href="/parametres"
-          label="Paramètres"
-          isActive={routerPath === '/parametres'}
-        />
         <button
           className="w-full flex items-center px-3 py-2.5 text-md font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
           onClick={() => { router.replace("/login"); }}
