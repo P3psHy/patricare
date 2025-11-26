@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -26,86 +26,37 @@ interface Property {
   image: string;
 }
 
+const API_BASE_URL = 'http://localhost:3000/lodgings';
+
 export default function MesBiensPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [properties, setProperties] = useState<Property[]>([
-    {
-      id: 1,
-      name: 'Appartement Paris 15ème',
-      type: 'Appartement',
-      address: '45 Rue de Vaugirard, 75015 Paris',
-      size: '65 m²',
-      rooms: '3 pièces',
-      rent: '1,250 €',
-      tenant: 'Marie Dubois',
-      status: 'Loué',
-      image: 'apartment',
-    },
-    {
-      id: 2,
-      name: 'Maison Lyon Centre',
-      type: 'Maison',
-      address: '12 Avenue Jean Jaurès, 69007 Lyon',
-      size: '120 m²',
-      rooms: '5 pièces',
-      rent: '1,800 €',
-      tenant: 'Pierre Martin',
-      status: 'Loué',
-      image: 'house',
-    },
-    {
-      id: 3,
-      name: 'Studio Bordeaux',
-      type: 'Studio',
-      address: "8 Cours de l'Intendance, 33000 Bordeaux",
-      size: '28 m²',
-      rooms: '1 pièce',
-      rent: '650 €',
-      tenant: null,
-      status: 'Disponible',
-      image: 'studio',
-    },
-    {
-      id: 4,
-      name: 'Bureau Lille',
-      type: 'Commercial',
-      address: '23 Rue Nationale, 59000 Lille',
-      size: '85 m²',
-      rooms: '4 pièces',
-      rent: '2,100 €',
-      tenant: 'Sophie Bernard',
-      status: 'Loué',
-      image: 'office',
-    },
-    {
-      id: 5,
-      name: 'Terrain Marseille',
-      type: 'Terrain',
-      address: 'Route des Calanques, 13008 Marseille',
-      size: '500 m²',
-      rooms: '-',
-      rent: '-',
-      tenant: null,
-      status: 'Non loué',
-      image: 'land',
-    },
-    {
-      id: 6,
-      name: 'Parking Toulouse',
-      type: 'Parking',
-      address: '15 Place du Capitole, 31000 Toulouse',
-      size: '12 m²',
-      rooms: '-',
-      rent: '120 €',
-      tenant: 'Jean Dupont',
-      status: 'Loué',
-      image: 'parking',
-    },
-  ]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [formData, setFormData] = useState<Property | null>(null);
+  const [formData, setFormData] = useState<Partial<Property> | null>(null);
+
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(API_BASE_URL);
+      if (!response.ok) throw new Error('Erreur lors du chargement des biens');
+      const data = await response.json();
+      setProperties(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      console.error('Erreur:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProperties = properties.filter((property) =>
     property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,20 +80,89 @@ export default function MesBiensPage() {
     }
   };
 
-  const handleSave = () => {
-    if (formData && editingProperty) {
-      setProperties(properties.map(p => p.id === editingProperty.id ? formData : p));
-      setShowEditModal(false);
-      setEditingProperty(null);
+  const handleAddProperty = async () => {
+    if (!formData?.name || !formData?.type) {
+      alert('Veuillez remplir les champs obligatoires');
+      return;
+    }
+
+    try {
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Erreur lors de l\'ajout du bien');
+
+      setShowAddModal(false);
       setFormData(null);
-      alert('Bien modifié avec succès');
+      await fetchProperties();
+      alert('Bien ajouté avec succès');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erreur lors de l\'ajout');
     }
   };
 
+  const handleSave = async () => {
+    if (!formData || !editingProperty) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/${editingProperty.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Erreur lors de la modification');
+
+      setShowEditModal(false);
+      setEditingProperty(null);
+      setFormData(null);
+      await fetchProperties();
+      alert('Bien modifié avec succès');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erreur lors de la modification');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce bien ?')) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Erreur lors de la suppression');
+
+      await fetchProperties();
+      alert('Bien supprimé avec succès');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement des biens...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex">
-
       <main className="flex-1 p-4 md:p-8 bg-gray-50 min-h-screen">
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="mb-6 md:mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div>
@@ -189,83 +209,93 @@ export default function MesBiensPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties.map((property) => (
-            <div
-              key={property.id}
-              className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden group"
-            >
-              <div className="h-48 bg-gradient-to-br from-blue-100 to-green-100 relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Home className="w-16 h-16 text-blue-600 opacity-30" />
-                </div>
-                <div className="absolute top-3 right-3">
-                  <span
-                    className={`px-3 py-1 rounded-full ${
-                      property.status === 'Loué'
-                        ? 'bg-green-600 text-white'
-                        : property.status === 'Disponible'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-600 text-white'
-                    }`}
-                  >
-                    {property.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-5">
-                <div className="mb-3">
-                  <h3 className="text-gray-900 mb-1">{property.name}</h3>
-                  <p className="text-gray-500">{property.type}</p>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-gray-700">{property.address}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-700">{property.size}</span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-gray-700">{property.rooms}</span>
-                  </div>
-                  {property.rent !== '-' && (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <DollarSign className="w-4 h-4" />
-                      <span className="text-gray-700">{property.rent}/mois</span>
-                    </div>
-                  )}
-                  {property.tenant && (
-                    <div className="text-gray-600">
-                      Locataire: <span className="text-gray-900">{property.tenant}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-100">
-                  <Link
-                    href={`/lodgings/${property.id}`}
-                    className="flex-1 flex items-center justify-center gap-2 px-2 md:px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition text-sm"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span className="hidden sm:inline">Voir</span>
-                  </Link>
-                  <button
-                    onClick={() => handleEditClick(property)}
-                    className="flex-1 flex items-center justify-center gap-2 px-2 md:px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition text-sm"
-                  >
-                    <Edit className="w-4 h-4" />
-                    <span className="hidden sm:inline">Modifier</span>
-                  </button>
-                  <button className="flex-1 sm:flex-none flex items-center justify-center px-2 md:px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+          {filteredProperties.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-600">Aucun bien trouvé</p>
             </div>
-          ))}
+          ) : (
+            filteredProperties.map((property) => (
+              <div
+                key={property.id}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden group"
+              >
+                <div className="h-48 bg-gradient-to-br from-blue-100 to-green-100 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Home className="w-16 h-16 text-blue-600 opacity-30" />
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className={`px-3 py-1 rounded-full ${
+                        property.status === 'Loué'
+                          ? 'bg-green-600 text-white'
+                          : property.status === 'Disponible'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-600 text-white'
+                      }`}
+                    >
+                      {property.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  <div className="mb-3">
+                    <h3 className="text-gray-900 mb-1">{property.name}</h3>
+                    <p className="text-gray-500">{property.type}</p>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-gray-700">{property.address}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-gray-700">{property.size}</span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-700">{property.rooms}</span>
+                    </div>
+                    {property.rent !== '-' && (
+                      <div className="flex items-center gap-2 text-green-600">
+                        <DollarSign className="w-4 h-4" />
+                        <span className="text-gray-700">{property.rent}/mois</span>
+                      </div>
+                    )}
+                    {property.tenant && (
+                      <div className="text-gray-600">
+                        Locataire: <span className="text-gray-900">{property.tenant}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-100">
+                    <Link
+                      href={`/lodgings/${property.id}`}
+                      className="flex-1 flex items-center justify-center gap-2 px-2 md:px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition text-sm"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span className="hidden sm:inline">Voir</span>
+                    </Link>
+                    <button
+                      onClick={() => handleEditClick(property)}
+                      className="flex-1 flex items-center justify-center gap-2 px-2 md:px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition text-sm"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span className="hidden sm:inline">Modifier</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(property.id)}
+                      className="flex-1 sm:flex-none flex items-center justify-center px-2 md:px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
+        {/* Modal Ajouter */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
             <div className="bg-white rounded-2xl max-w-2xl w-full my-8">
@@ -276,16 +306,25 @@ export default function MesBiensPage() {
               <div className="p-4 md:p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <label className="block text-gray-700 mb-2 text-sm">Nom du bien</label>
+                    <label className="block text-gray-700 mb-2 text-sm">Nom du bien *</label>
                     <input
                       type="text"
+                      name="name"
+                      value={formData?.name || ''}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                       placeholder="Ex: Appartement Paris 15ème"
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-700 mb-2 text-sm">Type de bien</label>
-                    <select className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
+                    <label className="block text-gray-700 mb-2 text-sm">Type de bien *</label>
+                    <select
+                      name="type"
+                      value={formData?.type || ''}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    >
+                      <option value="">Sélectionner</option>
                       <option>Appartement</option>
                       <option>Maison</option>
                       <option>Studio</option>
@@ -297,9 +336,12 @@ export default function MesBiensPage() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2 text-sm">Adresse complète</label>
+                  <label className="block text-gray-700 mb-2 text-sm">Adresse</label>
                   <input
                     type="text"
+                    name="address"
+                    value={formData?.address || ''}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                     placeholder="Ex: 45 Rue de Vaugirard, 75015 Paris"
                   />
@@ -309,15 +351,21 @@ export default function MesBiensPage() {
                   <div>
                     <label className="block text-gray-700 mb-2 text-sm">Surface (m²)</label>
                     <input
-                      type="number"
+                      type="text"
+                      name="size"
+                      value={formData?.size || ''}
+                      onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                       className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                       placeholder="65"
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-700 mb-2 text-sm">Nombre de pièces</label>
+                    <label className="block text-gray-700 mb-2 text-sm">Pièces</label>
                     <input
-                      type="number"
+                      type="text"
+                      name="rooms"
+                      value={formData?.rooms || ''}
+                      onChange={(e) => setFormData({ ...formData, rooms: e.target.value })}
                       className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                       placeholder="3"
                     />
@@ -325,32 +373,29 @@ export default function MesBiensPage() {
                   <div>
                     <label className="block text-gray-700 mb-2 text-sm">Loyer (€)</label>
                     <input
-                      type="number"
+                      type="text"
+                      name="rent"
+                      value={formData?.rent || ''}
+                      onChange={(e) => setFormData({ ...formData, rent: e.target.value })}
                       className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                       placeholder="1250"
                     />
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-2 text-sm">Description</label>
-                  <textarea
-                    className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                    rows={4}
-                    placeholder="Description détaillée du bien..."
-                  />
-                </div>
               </div>
 
               <div className="p-4 md:p-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setFormData(null);
+                  }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm"
                 >
                   Annuler
                 </button>
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={handleAddProperty}
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg hover:from-blue-700 hover:to-green-700 transition text-sm"
                 >
                   Ajouter le bien
@@ -360,6 +405,7 @@ export default function MesBiensPage() {
           </div>
         )}
 
+        {/* Modal Modifier */}
         {showEditModal && formData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
             <div className="bg-white rounded-2xl max-w-2xl w-full my-8">
