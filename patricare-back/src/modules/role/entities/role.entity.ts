@@ -1,15 +1,14 @@
-import { Column, Entity, OneToMany } from "typeorm/browser";
-import { PrimaryGeneratedColumn } from "typeorm/browser";
-import { User } from "../../modules/user/user.entity";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../user/entities/user.entity';
 
 @Entity('roles')
 export class Role {
-    @PrimaryGeneratedColumn('increment')
-    id: number;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-    @Column()
-    role: string;
+  @Column({ unique: true })
+  role: string;
 
-    @OneToMany(() => User, user => user.role)
-    users: User[];
+  @OneToMany(() => User, (user) => user.role)
+  users: User[];
 }
