@@ -19,7 +19,10 @@ export default function DocumentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
-  // Fix couleurs Tailwind dynamiques
+  // Modal importer document
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+
   const colorMap: Record<string, string> = {
     blue: "bg-blue-500",
     green: "bg-green-500",
@@ -124,7 +127,6 @@ export default function DocumentsPage() {
     <div className="flex">
 
       <main className="flex-1 p-8 bg-gray-50">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -133,13 +135,14 @@ export default function DocumentsPage() {
                 Centralisez tous vos documents administratifs
               </p>
             </div>
-            <button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-green-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-green-700 transition shadow-lg shadow-blue-200">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-green-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-green-700 transition shadow-lg shadow-blue-200"
+            >
               <Upload className="w-5 h-5" />
               Importer un document
             </button>
           </div>
-
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -153,18 +156,16 @@ export default function DocumentsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Folder list */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <h3 className="text-gray-900 mb-4">Dossiers</h3>
               <div className="space-y-2">
                 <button
                   onClick={() => setSelectedFolder(null)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition ${
-                    selectedFolder === null
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition ${selectedFolder === null
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-50"
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <FolderOpen className="w-4 h-4" />
@@ -177,17 +178,14 @@ export default function DocumentsPage() {
                   <button
                     key={folder.id}
                     onClick={() => setSelectedFolder(folder.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition ${
-                      selectedFolder === folder.id
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition ${selectedFolder === folder.id
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     <div className="flex items-center gap-2">
                       <div
-                        className={`w-3 h-3 rounded-full ${
-                          colorMap[folder.color]
-                        }`}
+                        className={`w-3 h-3 rounded-full ${colorMap[folder.color]}`}
                       />
                       <span>{folder.name}</span>
                     </div>
@@ -198,7 +196,6 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          {/* Documents table */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="p-6 border-b border-gray-200">
@@ -215,9 +212,7 @@ export default function DocumentsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left p-4 text-gray-600">
-                        Nom du document
-                      </th>
+                      <th className="text-left p-4 text-gray-600">Nom du document</th>
                       <th className="text-left p-4 text-gray-600">Bien</th>
                       <th className="text-left p-4 text-gray-600">Type</th>
                       <th className="text-left p-4 text-gray-600">Taille</th>
@@ -284,6 +279,55 @@ export default function DocumentsPage() {
           </div>
         </div>
       </main>
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-gray-900">Importer un document</h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Sélectionner un fichier
+                </label>
+
+                <label className="w-full border border-dashed border-gray-400 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition">
+                  <Upload className="w-8 h-8 text-gray-500 mb-2" />
+                  <span className="text-gray-600">
+                    {file ? file.name : "Déposez un fichier ici ou cliquez pour parcourir"}
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              >
+                Annuler
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setFile(null);
+                }}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg hover:from-blue-700 hover:to-green-700 transition"
+              >
+                Importer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
