@@ -1,4 +1,4 @@
-import { Adresse } from './entities/address.entity';
+import { Address } from './entities/address.entity';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 
@@ -10,11 +10,11 @@ export interface AddressFilter {
 }
 
 export interface IAddressService {
-  create(dto: CreateAddressDto): Promise<Adresse>;
-  findAll(filter?: AddressFilter): Promise<Adresse[]>;
-  findOne(id: number): Promise<Adresse>;
-  update(id: number, dto: UpdateAddressDto): Promise<Adresse>;
+  create(dto: CreateAddressDto): Promise<Address>;
+  findAll(filter?: AddressFilter): Promise<Address[]>;
+  findOne(id: number): Promise<Address>;
+  update(id: number, dto: UpdateAddressDto): Promise<Address>;
   remove(id: number): Promise<void>;
-  findByCityId(villeId: number): Promise<Adresse[]>;
+  findByCityId(villeId: number): Promise<Address[]>;
 }
 

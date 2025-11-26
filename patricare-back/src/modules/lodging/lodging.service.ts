@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lodging } from './entities/lodging.entity';
-import { Adresse } from '../address/entities/address.entity';
+import { Address } from '../address/entities/address.entity';
 import { CreateLodgingDto } from './dto/create-lodging.dto';
 import { UpdateLodgingDto } from './dto/update-lodging.dto';
 import { ILodgingService, LodgingFilter } from './lodging-service.interface';
@@ -11,7 +11,7 @@ import { ILodgingService, LodgingFilter } from './lodging-service.interface';
 export class LodgingService implements ILodgingService {
   constructor(
     @InjectRepository(Lodging) private readonly lodgingRepo: Repository<Lodging>,
-    @InjectRepository(Adresse) private readonly adresseRepo: Repository<Adresse>,
+    @InjectRepository(Address) private readonly adresseRepo: Repository<Address>,
   ) {}
 
   async create(dto: CreateLodgingDto): Promise<Lodging> {

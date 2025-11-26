@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Adresse } from './entities/address.entity';
+import { Address } from './entities/address.entity';
 import { City } from '../city/entities/city.entity';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
@@ -10,11 +10,11 @@ import { AddressFilter, IAddressService } from './address-service.interface';
 @Injectable()
 export class AddressService implements IAddressService {
   constructor(
-    @InjectRepository(Adresse) private readonly addressRepo: Repository<Adresse>,
+    @InjectRepository(Address) private readonly addressRepo: Repository<Address>,
     @InjectRepository(City) private readonly cityRepo: Repository<City>,
   ) {}
 
-  async create(dto: CreateAddressDto): Promise<Adresse> {
+  async create(dto: CreateAddressDto): Promise<Address> {
     const address = this.addressRepo.create({ rue: dto.rue });
 
     if (dto.villeId !== undefined) {
@@ -26,7 +26,7 @@ export class AddressService implements IAddressService {
     return this.addressRepo.save(address);
   }
 
-  async findAll(filter?: AddressFilter): Promise<Adresse[]> {
+  async findAll(filter?: AddressFilter): Promise<Address[]> {
     const qb = this.addressRepo.createQueryBuilder('adresse').leftJoinAndSelect('adresse.ville', 'ville');
 
     if (filter?.rue) qb.andWhere('LOWER(adresse.rue) LIKE LOWER(:rue)', { rue: `%${filter.rue}%` });
@@ -38,13 +38,13 @@ export class AddressService implements IAddressService {
     return qb.getMany();
   }
 
-  async findOne(id: number): Promise<Adresse> {
+  async findOne(id: number): Promise<Address> {
     const address = await this.addressRepo.findOne({ where: { id }, relations: ['ville'] });
     if (!address) throw new NotFoundException('Adresse introuvable');
     return address;
   }
 
-  async update(id: number, dto: UpdateAddressDto): Promise<Adresse> {
+  async update(id: number, dto: UpdateAddressDto): Promise<Address> {
     const address = await this.addressRepo.findOne({ where: { id }, relations: ['ville'] });
     if (!address) throw new NotFoundException('Adresse introuvable');
 
@@ -64,7 +64,7 @@ export class AddressService implements IAddressService {
     if (!res.affected) throw new NotFoundException('Adresse introuvable');
   }
 
-  async findByCityId(villeId: number): Promise<Adresse[]> {
+  async findByCityId(villeId: number): Promise<Address[]> {
     return this.addressRepo.find({ where: { ville: { id: villeId } }, relations: ['ville'] });
   }
 }

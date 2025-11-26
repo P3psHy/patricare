@@ -6,7 +6,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Adresse } from '../../address/entities/address.entity';
+import { Address } from '../../address/entities/address.entity';
 
 @Entity('logements')
 export class Lodging {
@@ -25,11 +25,11 @@ export class Lodging {
   @Column('int')
   nbPiece!: number;
 
-  @ManyToOne(() => Adresse, (adresse) => adresse.logements, {
+  @ManyToOne(() => Address, (adresse) => adresse.logements, {
     eager: true,
     nullable: false,
   })
   @JoinColumn({ name: 'adresseId' })
-  adresse!: Adresse;
+  adresse!: Address;
 
 }

@@ -3,7 +3,7 @@ import { Lodging } from '../../lodging/entities/lodging.entity';
 import { City } from '../../city/entities/city.entity';
 
 @Entity()
-export class Adresse {
+export class Address {
   @PrimaryGeneratedColumn()
   id: number;
 

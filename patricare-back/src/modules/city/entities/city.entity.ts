@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Adresse } from "../../address/entities/address.entity";
+import { Address } from "../../address/entities/address.entity";
 
 @Entity()
 export class City {
@@ -18,6 +18,6 @@ export class City {
     @Column()
     region: string;
 
-    @OneToMany(() => Adresse, adresse => adresse.ville)
-    adresses: Adresse[];
+    @OneToMany(() => Address, adresse => adresse.ville)
+    adresses: Address[];
 }

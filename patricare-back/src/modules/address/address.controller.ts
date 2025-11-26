@@ -13,14 +13,14 @@ import {
 import { AddressService } from './address.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
-import { Adresse } from './entities/address.entity';
+import { Address } from './entities/address.entity';
 
 @Controller('addresses')
 export class AddressController {
   constructor(private readonly addressService: AddressService) {}
 
   @Post()
-  create(@Body() dto: CreateAddressDto): Promise<Adresse> {
+  create(@Body() dto: CreateAddressDto): Promise<Address> {
     return this.addressService.create(dto);
   }
 
@@ -30,7 +30,7 @@ export class AddressController {
     @Query('villeId') villeId?: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
-  ): Promise<Adresse[]> {
+  ): Promise<Address[]> {
     const filter: any = {};
     if (rue) filter.rue = rue;
 
@@ -56,12 +56,12 @@ export class AddressController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<Adresse> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<Address> {
     return this.addressService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAddressDto): Promise<Adresse> {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAddressDto): Promise<Address> {
     return this.addressService.update(id, dto);
   }
 
