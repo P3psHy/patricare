@@ -11,22 +11,22 @@ const Sidenav = () => {
   const router = usePathname();
 
   return (
-    <div className="flex flex-col h-screen w-64 bg-white border-r border-gray-200 text-gray-700">
+    <div className="flex flex-col w-full h-full bg-white border-r border-gray-200 text-gray-700">
       {/* En-tête / Logo */}
-      <div className="p-6 border-b border-gray-100">
-        <Link href="/" className="flex items-center space-x-3">
-          <div className="p-2 bg-blue-100 rounded-full">
+      <div className="p-4 border-b border-gray-100">
+        <Link href="/" className="flex flex-col md:flex-row items-center space-y-1 md:space-x-2">
+          <div className="p-1 bg-blue-100 rounded-full">
             <Image src={Logo} alt="PatriCare Logo" width={64} height={64} />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">PatriCare</h1>
-            <p className="text-sm text-gray-500">Gestion immobilière</p>
+          <div className='w-full flex flex-col text-center md:text-left'>
+            <h1 className="text-sm md:text-lg font-bold text-gray-900 leading-tight">PatriCare</h1>
+            <p className="text-xs md:text-sm text-gray-500">Gestion immobilière</p>
           </div>
         </Link>
       </div>
 
       {/* Menu Principal */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-2 md:p-4 space-y-1 overflow-y-auto">
         <SidenavItem
           href="/dashboard"
           label="Tableau de bord"
@@ -57,7 +57,7 @@ const Sidenav = () => {
           isActive={router === '/parametres'}
         />
         <button
-          className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          className="w-full flex items-center px-3 py-2.5 text-xs md:text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
           onClick={() => { /* Logique de déconnexion */ console.log('Déconnexion'); }}
         >
           Déconnexion
