@@ -33,7 +33,7 @@ export default function RootLayout({
           <div className="h-full flex-none">
             <Sidenav />
           </div>
-          <div className="max-h-100vh flex-1 overflow-y-auto">
+          <div className="flex-auto w-full max-h-screen p-6 overflow-y-auto">
             {children}
           </div>
         </div>
