@@ -213,7 +213,7 @@ export default function Dashboard() {
           </div>
         </article>
 
-        <article className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <article className="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
           <header className="flex items-center justify-between border-b border-gray-200 p-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Tâches à venir</h2>
@@ -221,9 +221,9 @@ export default function Dashboard() {
             </div>
             <Calendar className="h-5 w-5 text-gray-400" />
           </header>
-          <div className="p-3">
-            <div className="space-y-4">
-              {upcomingTasks.map((task) => (
+          <div className="flex flex-col justify-between h-full p-3">
+            <div className="flex items-center text-center w-full h-full space-y-4">
+              {upcomingTasks.length > 0 ? upcomingTasks.map((task) => (
                 <div key={task.id} className="flex">
                   <div className={`h-full w-1.5 rounded-full ${priorityAccent[task.priority].bar}`} />
                   <div className="flex-1">
@@ -232,7 +232,7 @@ export default function Dashboard() {
                   </div>
                   <AlertCircle className={`h-5 w-5 ${priorityAccent[task.priority].icon}`} />
                 </div>
-              ))}
+              )) :  <a className="w-full text-gray-600">Aucune tâche à venir</a>}
             </div>
             <Link
               href="/documents"
