@@ -94,21 +94,18 @@ export default function DocumentsPage() {
   };
 
   const normalizedSearch = (searchTerm ?? "").toUpperCase();
-  const filteredDocuments = useMemo(
-    () =>
-      documents.filter((doc) => {
-        const name = (doc.name ?? "").toUpperCase();
-        const property = (doc.property ?? "").toUpperCase();
-        const folder = (doc.folder ?? "").toUpperCase();
 
-        return (
-          name.includes(normalizedSearch) ||
-          property.includes(normalizedSearch) ||
-          folder.includes(normalizedSearch)
-        );
-      }),
-    [documents, normalizedSearch],
-  );
+  const filteredDocuments = documents.filter((doc) => {
+    const name = (doc.name ?? "").toUpperCase();
+    const property = (doc.property ?? "").toUpperCase();
+    const folder = (doc.folder ?? "").toUpperCase();
+
+    return (
+      name.includes(normalizedSearch) ||
+      property.includes(normalizedSearch) ||
+      folder.includes(normalizedSearch)
+    );
+  });
 
   const selectedFolderName = selectedFolder
     ? folders.find((f) => f.id === selectedFolder)?.name
