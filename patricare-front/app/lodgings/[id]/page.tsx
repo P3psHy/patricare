@@ -125,17 +125,25 @@ export default function BienDetailPage({
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="flex flex-col justify-center w-full h-full p-4 md:p-6 max-w-3xl mx-auto">
       {loading && <p>Chargement...</p>}
       {error && <p className="text-red-600 mb-4">{error}</p>}
 
       {lodging && (
         <>
-          <h1 className="text-2xl md:text-3xl font-semibold mb-6">
-            {lodging.description || `Bien #${lodging.id}`}
+          <h1 className="text-center text-2xl md:text-3xl font-semibold mb-10">
+            {lodging.description?.toUpperCase() || `Bien #${lodging.id}`}
           </h1>
 
           <div className="bg-white rounded-xl p-4 md:p-6 shadow-md space-y-4 border">
+
+          <button
+            onClick={() => router.back()}
+            className="w-full sm:w-auto text-blue-400 underline"
+          >
+            Retour
+          </button>
+
             <div>
               <h2 className="text-lg font-medium text-gray-700">Informations</h2>
               <div className="mt-2 space-y-1 text-gray-600">
@@ -158,26 +166,19 @@ export default function BienDetailPage({
               </div>
             </div>
 
-            <div className="pt-4 border-t flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+            <div className="pt-4 border-t flex flex-col justify-center sm:flex-row items-center gap-3 sm:gap-4">
               <button
-                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-300"
                 onClick={openEditModal}
               >
                 Modifier
               </button>
 
               <button
-                className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                className="w-full sm:w-auto bg-orange-400 text-white px-4 py-2 rounded-lg hover:bg-orange-300"
                 onClick={handleDelete}
               >
                 Supprimer ce bien
-              </button>
-
-              <button
-                onClick={() => router.back()}
-                className="w-full sm:w-auto text-blue-600 underline"
-              >
-                ← Retour
               </button>
             </div>
           </div>
