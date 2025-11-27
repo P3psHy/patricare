@@ -14,6 +14,17 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 
+interface LodgingApi {
+  id: number;
+  estLoue: boolean;
+  prixLoyer: number;
+  superficie: number;
+  nbPiece: number;
+  description?: string;
+  adresse?: string;
+  ville?: string;
+}
+
 interface UserApi {
   id: number;
   firstname: string;
@@ -40,8 +51,8 @@ interface TenantForm {
   fullName: string;
   email: string;
   phone: string;
-  property: string;
-  rent: string;
+  property: string; // lodging id as string when selected, otherwise free text
+  rent: string; // numeric string (we store as string for input)
   rentDate: string;
   entryDate: string;
   notes: string;
@@ -67,16 +78,31 @@ export default function Locataires() {
   const [form, setForm] = useState<TenantForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [lodgings, setLodgings] = useState<LodgingApi[]>([]);
 
+  // Load lodgings and tenants on mount
   useEffect(() => {
+    loadLodgings();
     loadTenants();
   }, []);
+
+  const loadLodgings = async () => {
+    try {
+      setError(null);
+      const data = await api.get<LodgingApi[]>("/lodgings");
+      setLodgings(data);
+    } catch (err) {
+      console.error(err);
+      setError("Impossible de charger les biens.");
+    }
+  };
 
   const loadTenants = async () => {
     try {
       setLoading(true);
       setError(null);
       const users = await api.get<UserApi[]>("/users");
+      // Map users to tenant cards (basic)
       setTenants(
         users.map((u) => ({
           id: u.id,
@@ -89,7 +115,7 @@ export default function Locataires() {
           entryDate: "-",
           status: "Profil créé",
           paymentStatus: "paid",
-        })),
+        }))
       );
     } catch (e) {
       console.error(e);
@@ -105,10 +131,20 @@ export default function Locataires() {
         [tenant.name, tenant.email, tenant.property]
           .join(" ")
           .toLowerCase()
-          .includes(searchTerm.toLowerCase()),
+          .includes(searchTerm.toLowerCase())
       ),
-    [tenants, searchTerm],
+    [tenants, searchTerm]
   );
+
+  // When user selects a lodging in form, auto-fill rent from lodging.prixLoyer
+  const handleSelectLodging = (selectedId: string) => {
+    const selectedLodging = lodgings.find((l) => l.id === Number(selectedId));
+    setForm((prev) => ({
+      ...prev,
+      property: selectedId,
+      rent: selectedLodging ? String(selectedLodging.prixLoyer) : prev.rent,
+    }));
+  };
 
   const handleCreateTenant = async () => {
     if (!form.fullName.trim()) {
@@ -122,6 +158,8 @@ export default function Locataires() {
     try {
       setSaving(true);
       setActionError(null);
+
+      // Create user via API
       const created = await api.post<UserApi>("/users", {
         firstname,
         lastname,
@@ -132,16 +170,44 @@ export default function Locataires() {
         password: `PatriCare-${Date.now()}`,
       });
 
+      // Resolve property display & rent
+      const selectedLodging = lodgings.find((lg) => lg.id === Number(form.property));
+      const propertyDisplay = selectedLodging
+        ? `${selectedLodging.adresse ?? selectedLodging.description ?? "Bien"}${selectedLodging.ville ? ` (${selectedLodging.ville})` : ""}`
+        : form.property || "N/A";
+
+      const rentDisplay = selectedLodging
+        ? `${selectedLodging.prixLoyer} €`
+        : form.rent
+        ? `${form.rent} €`
+        : "N/A";
+
+      // Optionally mark lodging as rented on server if we used a lodging id
+      if (selectedLodging) {
+        try {
+          // best-effort: patch the lodging to estLoue = true
+          await api.patch<LodgingApi>(`/lodgings/${selectedLodging.id}`, {
+            estLoue: true,
+          });
+          // reload lodgings to reflect new status
+          loadLodgings();
+        } catch (err) {
+          // non-blocking: log but continue
+          console.error("Impossible de marquer le bien comme loué :", err);
+        }
+      }
+
+      // Add to local tenants state (display)
       setTenants((prev) => [
         {
           id: created.id,
           name: `${created.firstname} ${created.lastname}`.trim(),
           email: created.email ?? created.mail ?? form.email,
           phone: created.telephone ?? form.phone,
-          property: form.property || "N/A",
-          rent: form.rent ? `${form.rent} €` : "N/A",
+          property: propertyDisplay,
+          rent: rentDisplay,
           rentDate: form.rentDate || "-",
-          entryDate: form.entryDate || new Date().toLocaleDateString('fr-FR'),
+          entryDate: form.entryDate || new Date().toLocaleDateString("fr-FR"),
           status: "Nouveau locataire",
           paymentStatus: "paid",
         },
@@ -159,13 +225,13 @@ export default function Locataires() {
   };
 
   const handleDeleteTenant = async (id: number) => {
-    if (!confirm('Supprimer ce locataire ?')) return;
+    if (!confirm("Supprimer ce locataire ?")) return;
     try {
       await api.delete(`/users/${id}`);
       setTenants((prev) => prev.filter((tenant) => tenant.id !== id));
     } catch (e) {
       console.error(e);
-      alert('La suppression a échoué.');
+      alert("La suppression a échoué.");
     }
   };
 
@@ -213,7 +279,7 @@ export default function Locataires() {
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-md text-gray-500">Revenus mensuels</p>
-            <p className="text-lg font-semibold text-gray-900">5 270 €</p>
+            <p className="text-lg font-semibold text-gray-900">5 270 €</p>
           </div>
         </div>
       </header>
@@ -262,13 +328,13 @@ export default function Locataires() {
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
                   <a href={`mailto:${tenant.email}`} className="text-md text-blue-600 hover:text-blue-700">
-                    {tenant.email || '—'}
+                    {tenant.email || "—"}
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
                   <a href={`tel:${tenant.phone}`} className="text-md text-blue-600 hover:text-blue-700">
-                    {tenant.phone || '—'}
+                    {tenant.phone || "—"}
                   </a>
                 </div>
               </div>
@@ -313,9 +379,7 @@ export default function Locataires() {
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="border-b border-gray-200 p-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900">Ajouter un locataire</h2>
-              <p className="text-md text-gray-500">
-                Pré-remplissez les champs ci-dessous pour créer un nouveau dossier.
-              </p>
+              <p className="text-md text-gray-500">Pré-remplissez les champs ci-dessous pour créer un nouveau dossier.</p>
             </div>
             <div className="space-y-4 p-6">
               <div className="grid gap-4 md:grid-cols-2">
@@ -340,6 +404,7 @@ export default function Locataires() {
                   />
                 </div>
               </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-md font-medium text-gray-700">Téléphone</label>
@@ -351,17 +416,27 @@ export default function Locataires() {
                     placeholder="+33 6 12 34 56 78"
                   />
                 </div>
+
                 <div>
                   <label className="mb-2 block text-md font-medium text-gray-700">Bien loué</label>
-                  <input
-                    type="text"
+                  <select
                     value={form.property}
-                    onChange={(e) => setForm({ ...form, property: e.target.value })}
+                    onChange={(e) => handleSelectLodging(e.target.value)}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Appartement Paris 15ème"
-                  />
+                  >
+                    <option value="">Sélectionner un logement…</option>
+
+                    {lodgings.map((lodging) => (
+                      <option key={lodging.id} value={String(lodging.id)}>
+                        {lodging.adresse ?? lodging.description ?? "Adresse inconnue"}
+                        {lodging.ville ? `, ${lodging.ville}` : ""} — {lodging.superficie} m²
+                        {lodging.estLoue ? " (Loué)" : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
+
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <label className="mb-2 block text-md font-medium text-gray-700">Loyer mensuel (€)</label>
@@ -373,6 +448,7 @@ export default function Locataires() {
                     placeholder="1250"
                   />
                 </div>
+
                 <div>
                   <label className="mb-2 block text-md font-medium text-gray-700">Date de paiement</label>
                   <select
@@ -386,6 +462,7 @@ export default function Locataires() {
                     <option>15 du mois</option>
                   </select>
                 </div>
+
                 <div>
                   <label className="mb-2 block text-md font-medium text-gray-700">Date d'entrée</label>
                   <input
@@ -396,6 +473,7 @@ export default function Locataires() {
                   />
                 </div>
               </div>
+
               <div>
                 <label className="mb-2 block text-md font-medium text-gray-700">Notes additionnelles</label>
                 <textarea
@@ -407,7 +485,9 @@ export default function Locataires() {
                 />
               </div>
             </div>
+
             {actionError && <p className="px-6 text-sm text-red-600">{actionError}</p>}
+
             <div className="flex gap-3 border-t border-gray-200 p-6">
               <button
                 onClick={() => setShowAddModal(false)}
@@ -425,7 +505,7 @@ export default function Locataires() {
                     <Loader2 className="h-4 w-4 animate-spin" /> Création...
                   </span>
                 ) : (
-                  'Ajouter le locataire'
+                  "Ajouter le locataire"
                 )}
               </button>
             </div>
