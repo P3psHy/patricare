@@ -93,14 +93,14 @@ export default function MesBiensPage() {
 
   const filteredLodgings = useMemo(() => {
     let result = lodgings;
-  
+
     if (searchTerm) {
       const needle = searchTerm.toLowerCase();
       result = result.filter((lodging) =>
         (lodging.description || "").toLowerCase().includes(needle)
       );
     }
-  
+
     if (statusFilter !== "all") {
       result = result.filter((lodging) => {
         if (statusFilter === "loue") return lodging.estLoue === true;
@@ -108,9 +108,9 @@ export default function MesBiensPage() {
         return true;
       });
     }
-  
+
     return result;
-  }, [lodgings, searchTerm, statusFilter]);  
+  }, [lodgings, searchTerm, statusFilter]);
 
   const openAddModal = () => {
     setCreateForm(emptyForm);
@@ -229,6 +229,7 @@ export default function MesBiensPage() {
       <div>
         <label className="block text-gray-700 mb-2 text-sm">Statut</label>
         <select
+          id="estLoue"
           value={form.estLoue}
           onChange={(e) => setForm({ ...form, estLoue: e.target.value as 'true' | 'false' })}
           className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
@@ -299,11 +300,10 @@ export default function MesBiensPage() {
                   </div>
                   <div className="absolute top-3 right-3">
                     <span
-                      className={`px-3 py-1 rounded-full ${
-                        display.status === 'Loué'
+                      className={`px-3 py-1 rounded-full ${display.status === 'Loué'
                           ? 'bg-green-600 text-white'
                           : 'bg-blue-600 text-white'
-                      }`}
+                        }`}
                     >
                       {display.status}
                     </span>
