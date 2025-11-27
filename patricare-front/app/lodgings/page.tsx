@@ -57,6 +57,7 @@ const formToPayload = (form: LodgingFormValues) => ({
   estLoue: form.estLoue === 'true',
 });
 
+
 export default function MesBiensPage() {
   const [lodgings, setLodgings] = useState<LodgingApi[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,17 +89,28 @@ export default function MesBiensPage() {
     }
   };
 
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const filteredLodgings = useMemo(() => {
-    if (!searchTerm) {
-      return lodgings;
+    let result = lodgings;
+  
+    if (searchTerm) {
+      const needle = searchTerm.toLowerCase();
+      result = result.filter((lodging) =>
+        (lodging.description || "").toLowerCase().includes(needle)
+      );
     }
-    const needle = searchTerm.toLowerCase();
-    return lodgings.filter((lodging) =>
-      (lodging.description || '')
-        .toLowerCase()
-        .includes(needle),
-    );
-  }, [lodgings, searchTerm]);
+  
+    if (statusFilter !== "all") {
+      result = result.filter((lodging) => {
+        if (statusFilter === "loue") return lodging.estLoue === true;
+        if (statusFilter === "disponible") return lodging.estLoue === false;
+        return true;
+      });
+    }
+  
+    return result;
+  }, [lodgings, searchTerm, statusFilter]);  
 
   const openAddModal = () => {
     setCreateForm(emptyForm);
@@ -260,20 +272,12 @@ export default function MesBiensPage() {
                 className="w-full pl-10 pr-4 py-2 md:py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
               />
             </div>
-            <select className="px-3 md:px-4 py-2 md:py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base">
-              <option>Tous les types</option>
-              <option>Appartement</option>
-              <option>Maison</option>
-              <option>Studio</option>
-              <option>Commercial</option>
-              <option>Terrain</option>
-              <option>Parking</option>
-            </select>
-            <select className="px-3 md:px-4 py-2 md:py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base">
-              <option>Tous les statuts</option>
-              <option>Loué</option>
-              <option>Disponible</option>
-              <option>Non loué</option>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 md:px-4 py-2 md:py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm md:text-base"
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="loue">Loué</option>
+              <option value="disponible">Disponible</option>
             </select>
           </div>
         </div>
