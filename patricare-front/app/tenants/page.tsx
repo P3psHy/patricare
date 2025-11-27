@@ -338,30 +338,6 @@ export default function Locataires() {
                   </a>
                 </div>
               </div>
-
-              <div className="space-y-3 text-sm text-gray-600">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    <span className="text-md">Loyer mensuel</span>
-                  </div>
-                  <span className="font-semibold text-md text-right text-gray-900">{tenant.rent}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-md">Date de paiement</span>
-                  </div>
-                  <span className="font-semibold text-md text-right text-gray-900">{tenant.rentDate}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-md">Entrée dans les lieux</span>
-                  </div>
-                  <span className="font-semibold text-md text-right text-gray-900">{tenant.entryDate}</span>
-                </div>
-              </div>
             </div>
           </article>
         ))}
@@ -416,73 +392,6 @@ export default function Locataires() {
                     placeholder="+33 6 12 34 56 78"
                   />
                 </div>
-
-                <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">Bien loué</label>
-                  <select
-                    value={form.property}
-                    onChange={(e) => handleSelectLodging(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Sélectionner un logement…</option>
-
-                    {lodgings.map((lodging) => (
-                      <option key={lodging.id} value={String(lodging.id)}>
-                        {lodging.adresse ?? lodging.description ?? "Adresse inconnue"}
-                        {lodging.ville ? `, ${lodging.ville}` : ""} — {lodging.superficie} m²
-                        {lodging.estLoue ? " (Loué)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">Loyer mensuel (€)</label>
-                  <input
-                    type="number"
-                    value={form.rent}
-                    onChange={(e) => setForm({ ...form, rent: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="1250"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">Date de paiement</label>
-                  <select
-                    value={form.rentDate}
-                    onChange={(e) => setForm({ ...form, rentDate: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option>1er du mois</option>
-                    <option>5 du mois</option>
-                    <option>10 du mois</option>
-                    <option>15 du mois</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">Date d'entrée</label>
-                  <input
-                    type="date"
-                    value={form.entryDate}
-                    onChange={(e) => setForm({ ...form, entryDate: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-md font-medium text-gray-700">Notes additionnelles</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Notes concernant le locataire..."
-                />
               </div>
             </div>
 
