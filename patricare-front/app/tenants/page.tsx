@@ -1,6 +1,6 @@
- "use client";
+"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Plus,
@@ -9,6 +9,8 @@ import {
   Phone,
   Home,
   Calendar,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -17,10 +19,11 @@ interface UserApi {
   firstname: string;
   lastname: string;
   email?: string;
+  mail?: string;
   telephone?: string;
 }
 
-interface Tenant {
+interface TenantCard {
   id: number;
   name: string;
   email: string;
@@ -33,68 +36,154 @@ interface Tenant {
   paymentStatus: "paid" | "late";
 }
 
+interface TenantForm {
+  fullName: string;
+  email: string;
+  phone: string;
+  property: string;
+  rent: string;
+  rentDate: string;
+  entryDate: string;
+  notes: string;
+}
+
+const emptyForm: TenantForm = {
+  fullName: "",
+  email: "",
+  phone: "",
+  property: "",
+  rent: "",
+  rentDate: "1er du mois",
+  entryDate: "",
+  notes: "",
+};
+
 export default function Locataires() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenants, setTenants] = useState<TenantCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState<TenantForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
+    loadTenants();
+  }, []);
 
-        const users = await api.get<UserApi[]>("/users");
-
-        const mapped: Tenant[] = users.map((u) => ({
+  const loadTenants = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const users = await api.get<UserApi[]>("/users");
+      setTenants(
+        users.map((u) => ({
           id: u.id,
-          name: `${u.firstname} ${u.lastname}`,
-          email: u.email ?? "",
+          name: `${u.firstname} ${u.lastname}`.trim(),
+          email: u.email ?? u.mail ?? "",
           phone: u.telephone ?? "",
           property: "N/A",
           rent: "N/A",
           rentDate: "-",
           entryDate: "-",
-          status: "Non défini",
+          status: "Profil créé",
           paymentStatus: "paid",
-        }));
+        })),
+      );
+    } catch (e) {
+      console.error(e);
+      setError("Impossible de charger les locataires depuis l'API.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setTenants(mapped);
-      } catch (e) {
-        console.error(e);
-        setError("Impossible de charger les locataires depuis l'API.");
-      } finally {
-        setLoading(false);
-      }
+  const filteredTenants = useMemo(
+    () =>
+      tenants.filter((tenant) =>
+        [tenant.name, tenant.email, tenant.property]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()),
+      ),
+    [tenants, searchTerm],
+  );
+
+  const handleCreateTenant = async () => {
+    if (!form.fullName.trim()) {
+      setActionError("Le nom complet est requis.");
+      return;
     }
 
-    load();
-  }, []);
+    const [firstname, ...rest] = form.fullName.trim().split(" ");
+    const lastname = rest.join(" ") || "Inconnu";
 
-  const filteredTenants = tenants.filter((tenant) =>
-    [tenant.name, tenant.email, tenant.property]
-      .join(" ")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase()),
-  );
+    try {
+      setSaving(true);
+      setActionError(null);
+      const created = await api.post<UserApi>("/users", {
+        firstname,
+        lastname,
+        telephone: form.phone || "",
+        mail:
+          form.email ||
+          `${firstname.toLowerCase()}.${lastname.toLowerCase()}@patricare.local`,
+        password: `PatriCare-${Date.now()}`,
+      });
+
+      setTenants((prev) => [
+        {
+          id: created.id,
+          name: `${created.firstname} ${created.lastname}`.trim(),
+          email: created.email ?? created.mail ?? form.email,
+          phone: created.telephone ?? form.phone,
+          property: form.property || "N/A",
+          rent: form.rent ? `${form.rent} €` : "N/A",
+          rentDate: form.rentDate || "-",
+          entryDate: form.entryDate || new Date().toLocaleDateString('fr-FR'),
+          status: "Nouveau locataire",
+          paymentStatus: "paid",
+        },
+        ...prev,
+      ]);
+
+      setForm(emptyForm);
+      setShowAddModal(false);
+    } catch (e) {
+      console.error(e);
+      setActionError("Impossible d'ajouter ce locataire.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTenant = async (id: number) => {
+    if (!confirm('Supprimer ce locataire ?')) return;
+    try {
+      await api.delete(`/users/${id}`);
+      setTenants((prev) => prev.filter((tenant) => tenant.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert('La suppression a échoué.');
+    }
+  };
 
   return (
     <main className="w-full flex-1 px-4 py-8 md:py-8 space-y-6 md:space-y-10 bg-gray-50">
       <header className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-blue-600">
-              Gestion des locataires
-            </h1>
-            <p className="text-md text-gray-600">
-              Suivez vos locataires et leurs paiements.
-            </p>
+            <h1 className="text-xl font-semibold text-blue-600">Gestion des locataires</h1>
+            <p className="text-md text-gray-600">Suivez vos locataires et leurs paiements.</p>
           </div>
           <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-400 hover:opacity-60 px-4 py-3 text-md font-medium text-white shadow-lg shadow-blue-200 transition hover:from-blue-700 hover:to-green-700"
+            onClick={() => {
+              setForm(emptyForm);
+              setActionError(null);
+              setShowAddModal(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-400 hover:opacity-60 px-4 py-3 text-md font-medium text-white shadow-lg shadow-blue-200 transition"
           >
             <Plus className="h-5 w-5" />
             Ajouter un locataire
@@ -120,9 +209,7 @@ export default function Locataires() {
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-md text-gray-500">Locataires actifs</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {tenants.length}
-            </p>
+            <p className="text-lg font-semibold text-gray-900">{tenants.length}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-md text-gray-500">Revenus mensuels</p>
@@ -131,6 +218,9 @@ export default function Locataires() {
         </div>
       </header>
 
+      {loading && <p className="text-gray-500">Chargement des locataires...</p>}
+      {error && <p className="text-red-600">{error}</p>}
+
       <section className="grid gap-8 md:grid-cols-2">
         {filteredTenants.map((tenant) => (
           <article
@@ -138,46 +228,47 @@ export default function Locataires() {
             className="rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
           >
             <div className="p-6">
-              <div className="mb-4 flex items-start justify-between">
+              <div className="mb-4 flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="flex min-w-8 min-h-8 md:h-12 md:w-12 items-center justify-center rounded-full bg-blue-400 hover:opacity-60">
+                  <div className="flex min-w-8 min-h-8 md:h-12 md:w-12 items-center justify-center rounded-full bg-blue-400">
                     <Users className="w-4 h-4 md:h-6 md:w-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {tenant.name}
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{tenant.name}</h3>
                     <p className="text-md text-gray-500">{tenant.property}</p>
                   </div>
                 </div>
-                <span
-                  className={`rounded-2xl px-3 py-2 text-sm md:text-md text-center font-semibold ${
-                    tenant.paymentStatus === "paid"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {tenant.status}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span
+                    className={`rounded-2xl px-3 py-2 text-sm md:text-md text-center font-semibold ${
+                      tenant.paymentStatus === "paid"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {tenant.status}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteTenant(tenant.id)}
+                    className="inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Supprimer
+                  </button>
+                </div>
               </div>
 
               <div className="mb-4 space-y-3 border-b border-gray-100 pb-4 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  <a
-                    href={`mailto:${tenant.email}`}
-                    className="text-md text-blue-600 hover:text-blue-700"
-                  >
-                    {tenant.email}
+                  <a href={`mailto:${tenant.email}`} className="text-md text-blue-600 hover:text-blue-700">
+                    {tenant.email || '—'}
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  <a
-                    href={`tel:${tenant.phone}`}
-                    className="text-md text-blue-600 hover:text-blue-700"
-                  >
-                    {tenant.phone}
+                  <a href={`tel:${tenant.phone}`} className="text-md text-blue-600 hover:text-blue-700">
+                    {tenant.phone || '—'}
                   </a>
                 </div>
               </div>
@@ -188,27 +279,21 @@ export default function Locataires() {
                     <Home className="h-4 w-4" />
                     <span className="text-md">Loyer mensuel</span>
                   </div>
-                  <span className="font-semibold text-md text-right text-gray-900">
-                    {tenant.rent}
-                  </span>
+                  <span className="font-semibold text-md text-right text-gray-900">{tenant.rent}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span className="text-md">Date de paiement</span>
                   </div>
-                  <span className="font-semibold text-md text-right text-gray-900">
-                    {tenant.rentDate}
-                  </span>
+                  <span className="font-semibold text-md text-right text-gray-900">{tenant.rentDate}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span className="text-md">Entrée dans les lieux</span>
                   </div>
-                  <span className="font-semibold text-md text-right text-gray-900">
-                    {tenant.entryDate}
-                  </span>
+                  <span className="font-semibold text-md text-right text-gray-900">{tenant.entryDate}</span>
                 </div>
               </div>
             </div>
@@ -216,7 +301,7 @@ export default function Locataires() {
         ))}
       </section>
 
-      {filteredTenants.length === 0 && (
+      {filteredTenants.length === 0 && !loading && (
         <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
           <Users className="mx-auto mb-4 h-12 w-12 text-gray-300" />
           <p className="text-md text-gray-500">Aucun locataire trouvé.</p>
@@ -227,32 +312,29 @@ export default function Locataires() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="border-b border-gray-200 p-6">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900">
-                Ajouter un locataire
-              </h2>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Ajouter un locataire</h2>
               <p className="text-md text-gray-500">
-                Pré-remplissez les champs ci-dessous pour créer un nouveau
-                dossier.
+                Pré-remplissez les champs ci-dessous pour créer un nouveau dossier.
               </p>
             </div>
             <div className="space-y-4 p-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">
-                    Nom complet
-                  </label>
+                  <label className="mb-2 block text-md font-medium text-gray-700">Nom complet</label>
                   <input
                     type="text"
+                    value={form.fullName}
+                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ex: Marie Dubois"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">
-                    Email
-                  </label>
+                  <label className="mb-2 block text-md font-medium text-gray-700">Email</label>
                   <input
                     type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="email@exemple.com"
                   />
@@ -260,44 +342,44 @@ export default function Locataires() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">
-                    Téléphone
-                  </label>
+                  <label className="mb-2 block text-md font-medium text-gray-700">Téléphone</label>
                   <input
                     type="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="+33 6 12 34 56 78"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">
-                    Bien loué
-                  </label>
-                  <select className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Sélectionner un bien</option>
-                    <option>Appartement Paris 15ème</option>
-                    <option>Maison Lyon Centre</option>
-                    <option>Studio Bordeaux</option>
-                    <option>Bureau Lille</option>
-                  </select>
+                  <label className="mb-2 block text-md font-medium text-gray-700">Bien loué</label>
+                  <input
+                    type="text"
+                    value={form.property}
+                    onChange={(e) => setForm({ ...form, property: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Appartement Paris 15ème"
+                  />
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">
-                    Loyer mensuel (€)
-                  </label>
+                  <label className="mb-2 block text-md font-medium text-gray-700">Loyer mensuel (€)</label>
                   <input
                     type="number"
+                    value={form.rent}
+                    onChange={(e) => setForm({ ...form, rent: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="1250"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">
-                    Date de paiement
-                  </label>
-                  <select className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <label className="mb-2 block text-md font-medium text-gray-700">Date de paiement</label>
+                  <select
+                    value={form.rentDate}
+                    onChange={(e) => setForm({ ...form, rentDate: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
                     <option>1er du mois</option>
                     <option>5 du mois</option>
                     <option>10 du mois</option>
@@ -305,26 +387,27 @@ export default function Locataires() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-md font-medium text-gray-700">
-                    Date d'entrée
-                  </label>
+                  <label className="mb-2 block text-md font-medium text-gray-700">Date d'entrée</label>
                   <input
                     type="date"
+                    value={form.entryDate}
+                    onChange={(e) => setForm({ ...form, entryDate: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-2 block text-md font-medium text-gray-700">
-                  Notes additionnelles
-                </label>
+                <label className="mb-2 block text-md font-medium text-gray-700">Notes additionnelles</label>
                 <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 text-md focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Notes concernant le locataire..."
                 />
               </div>
             </div>
+            {actionError && <p className="px-6 text-sm text-red-600">{actionError}</p>}
             <div className="flex gap-3 border-t border-gray-200 p-6">
               <button
                 onClick={() => setShowAddModal(false)}
@@ -333,10 +416,17 @@ export default function Locataires() {
                 Annuler
               </button>
               <button
-                onClick={() => setShowAddModal(false)}
-                className="flex-1 rounded-lg bg-blue-400 hover:opacity-60 px-4 py-2 text-md font-medium text-white transition hover:from-blue-700 hover:to-green-700"
+                onClick={handleCreateTenant}
+                disabled={saving}
+                className="flex-1 rounded-lg bg-blue-400 px-4 py-2 text-md font-medium text-white transition hover:opacity-60 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Ajouter le locataire
+                {saving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Création...
+                  </span>
+                ) : (
+                  'Ajouter le locataire'
+                )}
               </button>
             </div>
           </div>
