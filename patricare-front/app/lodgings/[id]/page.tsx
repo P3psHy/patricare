@@ -1,8 +1,8 @@
 'use client';
 
-import { notFound } from "next/navigation";
-import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 
 interface LodgingApi {
   id: number;
@@ -13,224 +13,247 @@ interface LodgingApi {
   description?: string;
 }
 
-interface Bien {
-  id: number;
-  titre: string;
-  adresse: string;
-  type: string;
-  superficie: number;
-  description?: string;
-  createdAt: string;
+interface LodgingFormValues {
+  description: string;
+  prixLoyer: string;
+  superficie: string;
+  nbPiece: string;
+  estLoue: 'true' | 'false';
 }
+
+const emptyForm: LodgingFormValues = {
+  description: '',
+  prixLoyer: '',
+  superficie: '',
+  nbPiece: '',
+  estLoue: 'false',
+};
+
+const formToPayload = (form: LodgingFormValues) => ({
+  description: form.description.trim() || undefined,
+  prixLoyer: Number(form.prixLoyer) || 0,
+  superficie: Number(form.superficie) || 0,
+  nbPiece: Number(form.nbPiece) || 0,
+  estLoue: form.estLoue === 'true',
+});
 
 export default function BienDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(
-    null,
-  );
-  const [bien, setBien] = useState<Bien | null>(null);
+  const router = useRouter();
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+  const [lodging, setLodging] = useState<LodgingApi | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [formData, setFormData] = useState<Bien | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [formData, setFormData] = useState<LodgingFormValues>(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    params.then(setResolvedParams).catch(() => {
-      setError("Paramètre invalide.");
-    });
+    params
+      .then((value) => setResolvedParams(value))
+      .catch(() => setError('Paramètres invalides.'));
   }, [params]);
 
   useEffect(() => {
     if (!resolvedParams) return;
-
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await api.get<LodgingApi>(
-          `/lodgings/${resolvedParams.id}`,
-        );
-
-        const mapped: Bien = {
-          id: data.id,
-          titre: data.description || `Bien #${data.id}`,
-          adresse: `Superficie ${data.superficie} m²`,
-          type: "Bien",
-          superficie: data.superficie,
-          description: data.description,
-          createdAt: "",
-        };
-
-        setBien(mapped);
-        setFormData(mapped);
-      } catch (e) {
-        console.error(e);
-        setError("Impossible de charger le bien depuis l'API.");
-        setBien(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
+    loadLodging(resolvedParams.id);
   }, [resolvedParams]);
 
-  if (loading) {
-    return <div className="p-6">Chargement...</div>;
-  }
+  const loadLodging = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await api.get<LodgingApi>(`/lodgings/${id}`);
+      setLodging(data);
+    } catch (err) {
+      console.error(err);
+      setError("Impossible de charger ce bien.");
+      setLodging(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (!bien) {
-    return notFound();
-  }
-
-  const handleEdit = () => {
-    setFormData(bien);
+  const openEditModal = () => {
+    if (!lodging) return;
+    setFormData({
+      description: lodging.description || '',
+      prixLoyer: String(lodging.prixLoyer ?? ''),
+      superficie: String(lodging.superficie ?? ''),
+      nbPiece: String(lodging.nbPiece ?? ''),
+      estLoue: lodging.estLoue ? 'true' : 'false',
+    });
     setShowEditModal(true);
   };
 
-  const handleDelete = () => {
-    alert("Suppression à connecter");
-  };
-
-  const handleBack = () => {
-    window.history.back();
-  };
-
-  const handleSave = () => {
-    if (formData) {
-      setBien(formData);
+  const handleSave = async () => {
+    if (!lodging) return;
+    try {
+      setSaving(true);
+      await api.patch(`/lodgings/${lodging.id}`, formToPayload(formData));
+      await loadLodging(String(lodging.id));
       setShowEditModal(false);
-      alert("Bien modifié avec succès");
+    } catch (err) {
+      console.error(err);
+      alert('La mise à jour a échoué.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (formData) {
-      setFormData({
-        ...formData,
-        [name]: name === 'superficie' ? parseFloat(value) : value,
-      });
+  const handleDelete = async () => {
+    if (!lodging) return;
+    if (!confirm('Supprimer définitivement ce bien ?')) return;
+    try {
+      await api.delete(`/lodgings/${lodging.id}`);
+      router.push('/lodgings');
+    } catch (err) {
+      console.error(err);
+      alert('Impossible de supprimer ce bien.');
     }
   };
+
+  if (!loading && !lodging) {
+    return (
+      <div className="p-4 md:p-6 max-w-3xl mx-auto">
+        <p className="text-red-600">Ce bien est introuvable.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-semibold mb-6">{bien.titre}</h1>
+      {loading && <p>Chargement...</p>}
+      {error && <p className="text-red-600 mb-4">{error}</p>}
 
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-md space-y-4 border">
-        <div>
-          <h2 className="text-lg font-medium text-gray-700">Informations</h2>
-          <div className="mt-2 space-y-1 text-gray-600">
-            <p><span className="font-semibold">Adresse :</span> {bien.adresse}</p>
-            <p><span className="font-semibold">Type :</span> {bien.type}</p>
-            <p><span className="font-semibold">Superficie :</span> {bien.superficie} m²</p>
-            <p><span className="font-semibold">Ajouté le :</span> {bien.createdAt}</p>
+      {lodging && (
+        <>
+          <h1 className="text-2xl md:text-3xl font-semibold mb-6">
+            {lodging.description || `Bien #${lodging.id}`}
+          </h1>
+
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-md space-y-4 border">
+            <div>
+              <h2 className="text-lg font-medium text-gray-700">Informations</h2>
+              <div className="mt-2 space-y-1 text-gray-600">
+                <p>
+                  <span className="font-semibold">Identifiant :</span> #{lodging.id}
+                </p>
+                <p>
+                  <span className="font-semibold">Statut :</span>{' '}
+                  {lodging.estLoue ? 'Loué' : 'Disponible'}
+                </p>
+                <p>
+                  <span className="font-semibold">Superficie :</span> {lodging.superficie} m²
+                </p>
+                <p>
+                  <span className="font-semibold">Pièces :</span> {lodging.nbPiece}
+                </p>
+                <p>
+                  <span className="font-semibold">Loyer :</span> {lodging.prixLoyer} € / mois
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+              <button
+                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                onClick={openEditModal}
+              >
+                Modifier
+              </button>
+
+              <button
+                className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                onClick={handleDelete}
+              >
+                Supprimer ce bien
+              </button>
+
+              <button
+                onClick={() => router.back()}
+                className="w-full sm:w-auto text-blue-600 underline"
+              >
+                ← Retour
+              </button>
+            </div>
           </div>
-        </div>
+        </>
+      )}
 
-        {bien.description && (
-          <div>
-            <h2 className="text-lg font-medium text-gray-700">Description</h2>
-            <p className="mt-2 text-gray-600">{bien.description}</p>
-          </div>
-        )}
-
-        <div className="pt-4 border-t flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-          <button
-            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            onClick={handleEdit}
-          >
-            Modifier
-          </button>
-
-          <button
-            className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-            onClick={handleDelete}
-          >
-            Supprimer ce bien
-          </button>
-        </div>
-      </div>
-
-      <button
-        onClick={handleBack}
-        className="mt-6 text-blue-600 underline"
-      >
-        ← Retour
-      </button>
-
-      {showEditModal && formData && (
+      {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-2xl w-full my-8">
             <div className="p-4 md:p-6 border-b border-gray-200">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Modifier le bien</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+                Modifier le bien
+              </h2>
             </div>
 
             <div className="p-4 md:p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div>
-                <label className="block text-gray-700 mb-2 font-medium">Titre du bien</label>
+                <label className="block text-gray-700 mb-2 font-medium">
+                  Description
+                </label>
                 <input
                   type="text"
-                  name="titre"
-                  value={formData.titre}
-                  onChange={handleInputChange}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-medium">Type de bien</label>
-                  <select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  >
-                    <option>Appartement</option>
-                    <option>Maison</option>
-                    <option>Studio</option>
-                    <option>Commercial</option>
-                    <option>Terrain</option>
-                    <option>Parking</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-gray-700 mb-2 font-medium">Superficie (m²)</label>
+                  <label className="block text-gray-700 mb-2 font-medium">
+                    Loyer (€)
+                  </label>
                   <input
                     type="number"
-                    name="superficie"
+                    value={formData.prixLoyer}
+                    onChange={(e) => setFormData({ ...formData, prixLoyer: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">
+                    Superficie (m²)
+                  </label>
+                  <input
+                    type="number"
                     value={formData.superficie}
-                    onChange={handleInputChange}
+                    onChange={(e) => setFormData({ ...formData, superficie: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-gray-700 mb-2 font-medium">Adresse</label>
-                <input
-                  type="text"
-                  name="adresse"
-                  value={formData.adresse}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 mb-2 font-medium">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description || ''}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">
+                    Nombre de pièces
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.nbPiece}
+                    onChange={(e) => setFormData({ ...formData, nbPiece: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">Statut</label>
+                  <select
+                    value={formData.estLoue}
+                    onChange={(e) => setFormData({ ...formData, estLoue: e.target.value as 'true' | 'false' })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option value="true">Loué</option>
+                    <option value="false">Disponible</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -243,9 +266,10 @@ export default function BienDetailPage({
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
               >
-                Enregistrer les modifications
+                {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
           </div>
