@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { Adresse } from "../../address/entities/adresse.entity";
 
 @Entity()
-export class Ville {
+export class City {
     @PrimaryGeneratedColumn()
     id: number;
 
